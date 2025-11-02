@@ -1,8 +1,127 @@
+import { easeInOut, motion } from "framer-motion"
+import { Zap } from "lucide-react"
 
-export function LoginPage(){
-    return(
-        <>
-        <div>HY </div>
-        </>
+export function LoginPage({ onLogin, onNavigateToSignup }) {
+    return (
+        <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden relative gradient-bg">
+            {/* animate circle  */}
+            <motion.div
+                className="absolute h-72 w-72 top-20 left-10 bg-orange-600/20 rounded-full blur-3xl"
+                animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{
+                    duration: 8,
+                    repeat: Infinity,
+                    ease: easeInOut
+                }}
+
+            />
+            <motion.div
+                className="absolute h-72 w-72 bottom-20 right-10 bg-green-600/20 rounded-full blur-3xl"
+                animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{
+                    duration: 8,
+                    repeat: Infinity,
+                    ease: easeInOut,
+                    delay: 1
+                }}
+            />
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="w-full max-w-md relative z-10"
+            >
+                {/* logo  */}
+                <motion.div
+                    className="text-center mb-12"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                >
+                    <motion.div
+                        className="inline-flex items-center justify-center w-20 h-20 rounded-2xl gradient-orange glow-orange mb-4"
+                        animate={{
+                            boxShadow: [
+                                "0 0 20px rgba(249, 115, 22, 0.4)",
+                                "0 0 40px rgba(249, 115, 22, 0.6)",
+                                "0 0 20px rgba(249, 115, 22, 0.4)",
+                            ]
+                        }}
+                        transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    >
+                        <Zap className="w-10 h-10 text-slate-900" />
+                    </motion.div>
+                    <h1 className="text-4xl font-bold text-white mb-2">QuickServe</h1>
+                    <p className="text-slate-400">Smart Food Order Tracking</p>
+                </motion.div>
+                <motion.div
+                    className="glass rounded-2xl p-8 glow-orange"
+                    initial={{ opacit: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                    <h2 className="text-2xl text-white font-bold mb-6">Welcome Back</h2>
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <label className="text-sm text-slate-300 mb-2 block">Email</label>
+                            <input type="email"
+                                placeholder="your@email.com"
+                                className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm text-slate-300 mb-2 block">Password</label>
+                            <input type="password"
+                                placeholder="••••••••"
+                                className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <button
+                                onClick={() => onLogin('customer')}
+                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
+                                Login as Customer
+                            </button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <button
+                                onClick={() => onLogin('shopkeeper')}
+                                className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
+                                Login as Shopkeeper
+                            </button>
+                            <div className="text-center mt-6">
+                                <a href="#" className="text-sm text-slate-400 hover:text-orange-500 transition-colors">
+                                    Forgot password?
+                                </a>
+                            </div>
+                        </motion.div>
+
+                    </div>
+                </motion.div >
+                <p className="text-center text-slate-500 text-sm mt-6">
+                    Don't have an account?{" "}
+                    <button
+                        onClick={onNavigateToSignup}
+                        className="text-orange-500 hover:text-orange-300 transition-colors"
+                    >
+                        Sign up
+                    </button>
+                </p>
+            </motion.div >
+
+        </div >
     )
 }

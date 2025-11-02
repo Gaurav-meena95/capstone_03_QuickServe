@@ -16,15 +16,15 @@ export function SplashScreen({ onComplete }) {
                 return prev + 2
             })
 
-        }, 100);
+        }, 90);
         return () => clearInterval(timer)
     }, [onComplete])
     return (
-        <div className="fixed inset-0 flex items-center justify-center gradient-bg overflow-hidden z-50">
+        <div className="fixed  inset-0 flex items-center justify-center gradient-bg overflow-hidden z-50">
 
             {/* for animate circele */}
             <motion.div
-                className="absolte top-1/4 left-1/4 w-96 h-96 bg-orange-600/30 rounded-full blur-3xl"
+                className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-600/30 rounded-full blur-3xl"
                 animate={{
                     scale: [1, 1.3, 1],
                     opacity: [0.3, 0.6, 0.3]
@@ -36,7 +36,7 @@ export function SplashScreen({ onComplete }) {
                 }}
             />
             <motion.div
-                className="absolte bottom-1/4 right-1/4 w-96 h-96 bg-green-600/30 rounded-full blur-3xl"
+                className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-600/30 rounded-full blur-3xl"
                 animate={{
                     scale: [1, 1.5, 1],
                     opacity: [0.3, 0.6, 0.3]
@@ -49,7 +49,7 @@ export function SplashScreen({ onComplete }) {
                 }}
             />
             {/* logo with pulse animate */}
-            <div className="relative text-center z-10">
+            <div className="absolute text-center z-10 p-3">
                 <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     animate={{ scale: 1, rotate: 0 }}

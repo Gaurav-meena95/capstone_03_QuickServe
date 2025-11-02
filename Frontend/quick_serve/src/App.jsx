@@ -5,12 +5,12 @@ import { SplashScreen } from './components/SplashScreen'
 function App() {
   const [showSplash, setShowsplash] = useState(true)
 
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowsplash(false)} />
-  }
+  // if (showSplash) {
+  //   return <SplashScreen onComplete={() => setShowsplash(false)} />
+  // }
   return (
     <div className='size-full bg-slate-900 overflow-hidden'>
-      <SplashScreen/>
+      {/* <SplashScreen/> */}
       <LoginPage/>
     </div>
   )
