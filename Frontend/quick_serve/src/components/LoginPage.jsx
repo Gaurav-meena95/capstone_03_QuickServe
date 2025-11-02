@@ -121,7 +121,6 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                     </button>
                 </p>
             </motion.div >
-
         </div >
     )
 }
