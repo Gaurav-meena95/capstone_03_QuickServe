@@ -1,11 +1,18 @@
-import './App.css'
+import { useState } from 'react'
+import { LoginPage } from './components/LoginPage'
+import { SplashScreen } from './components/SplashScreen'
 
 function App() {
+  const [showSplash, setShowsplash] = useState(true)
 
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowsplash(false)} />
+  }
   return (
-    <>
-    <h1 className='text-amber-500'>Qucik serve started </h1>
-    </>
+    <div className='size-full bg-slate-900 overflow-hidden'>
+      <SplashScreen/>
+      <LoginPage/>
+    </div>
   )
 }
 

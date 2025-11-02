@@ -1,6 +1,22 @@
 @import "tailwindcss";
-:root{
-  background-color: black;
-  color: white;
 
+:root {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@layer components {
+  .gradient-bg {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  }
+  .gradient-orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  }
+  .glow-orange {
+    box-shadow: 0 0 20px #f9731666;
+  }
 }
