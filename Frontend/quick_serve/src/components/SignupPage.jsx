@@ -4,6 +4,47 @@ import { useState } from "react";
 
 export function SignupPage({ onSignup, onNavigateToLogin }) {
     const [role, setRole] = useState('customer');
+    const [form, setForm] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        password: '',
+        confirmPassword: ''
+    });
+
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value })
+    }
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setError('')
+        if (password !== confirmPassword) {
+            setError('Password not match')
+            return
+        }
+        setLoading(true)
+        try {
+            const res = await fetch('http://localhost:5000/api/signup', {
+                method: 'POST',
+                content: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...form, role })
+            })
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Signup failed")
+
+            alert("Account created successfully!");
+            onSignup && onSignup(role);
+        } catch (error) {
+            console.log(error)
+            setError(error.message)
+        }
+        finally {
+            setLoading(false)
+        }
+    }
     return (
         <div className="min-h-screen gradient-bg flex items-center justify-center overflow-hidden relative p-6">
             <motion.div
@@ -93,63 +134,88 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                         </motion.div>
                     </div>
 
-                    <div className="space-y-4 mb-6">
-                        <div>
-                            <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
-                                <User className="w-4 h-4" />Full Name
-                            </label>
-                            <input type="text"
-                                placeholder="Enter your name"
-                                className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
-                                <Mail className="w-4 h-4" />Email
-                            </label>
-                            <input type="email"
-                                placeholder="your@gmail.com"
-                                className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
-                                <Phone className="w-4 h-4" />Phone Number
-                            </label>
-                            <input type="tel"
-                                placeholder="+91-9234 567 890"
-                                className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm flex items-center  gap-2 text-slate-300 mb-2 block">
-                                <Lock className="w-4 h-4" />Password
-                            </label>
-                            <input type="password"
-                                placeholder="••••••••"
-                                className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 block">
-                                <Lock className="w-4 h-4" />Confirm Password
-                            </label>
-                            <input type="password"
-                                placeholder="••••••••"
-                                className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                            />
-                        </div>
+                    <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+                        <div >
+                            <div>
+                                <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
+                                    <User className="w-4 h-4" />Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Enter your name"
+                                    className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                    name="name"
+                                    required
+                                    value={form.name}
+                                    onChange={handleChange}
 
-                    </div>
-
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
+                                    <Mail className="w-4 h-4" />Email
+                                </label>
+                                <input type="email"
+                                    placeholder="your@gmail.com"
+                                    className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                    name="email"
+                                    required
+                                    value={form.email}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
+                                    <Phone className="w-4 h-4" />Phone Number
+                                </label>
+                                <input type="tel"
+                                    placeholder="+91-9234 567 890"
+                                    className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                    name="phone"
+                                    required
+                                    value={form.phone}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm flex items-center  gap-2 text-slate-300 mb-2 block">
+                                    <Lock className="w-4 h-4" />Password
+                                </label>
+                                <input type="password"
+                                    placeholder="••••••••"
+                                    className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                     name="password"
+                                    required
+                                    value={form.password}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 block">
+                                    <Lock className="w-4 h-4" />Confirm Password
+                                </label>
+                                <input type="password"
+                                    placeholder="••••••••"
+                                    className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                     name="confirmPassword"
+                                    required
+                                    value={form.confirmPassword}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                    
+                     {error && <p className="text-red-500 text-sm">{error}</p>}
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <button
                             onClick={() => onSignup(role)}
+                            type="submit"
+                            disabled={loading}
                             className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
-                            Create Account
+                            { loading ?  "Creating..." : "Create Account"}
                         </button>
                     </motion.div>
-
+                    </form>
                     <div className="text-center mt-4">
                         <p className="text-sm text-slate-400">
                             By signing up, you agree to our{" "}

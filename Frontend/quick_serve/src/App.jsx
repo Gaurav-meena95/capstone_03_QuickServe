@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { SignupPage } from './components/SignupPage'
+import { LoginPage } from './components/LoginPage'
+import { SplashScreen } from './components/SplashScreen'
+
 
 function App() {
   const [showSplash, setShowsplash] = useState(true)
@@ -15,13 +18,13 @@ function App() {
     }
   }
 
-  // if (showSplash) {
-  //   return <SplashScreen onComplete={() => setShowsplash(false)} />
-  // }
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowsplash(false)} />
+  }
   return (
     <div className='size-full bg-slate-900 overflow-hidden'>
-      {/* <SplashScreen/> */}
-      {/* <LoginPage/> */}
+      <LoginPage/>
+      <SignupPage/>
     </div>
   )
 }
