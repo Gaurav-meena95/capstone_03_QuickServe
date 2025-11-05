@@ -16,7 +16,7 @@ export function SplashScreen({ onComplete }) {
                 return prev + 2
             })
 
-        }, 60);
+        }, 20);
         return () => clearInterval(timer)
     }, [onComplete])
     return (

@@ -1,6 +1,5 @@
 import { easeInOut, motion } from "framer-motion"
 import { Zap } from "lucide-react"
-import { use } from "react"
 import { useState } from "react"
 
 export function LoginPage({ onLogin, onNavigateToSignup }) {
