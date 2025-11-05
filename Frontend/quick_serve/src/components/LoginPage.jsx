@@ -1,7 +1,42 @@
 import { easeInOut, motion } from "framer-motion"
 import { Zap } from "lucide-react"
+import { use } from "react"
+import { useState } from "react"
 
 export function LoginPage({ onLogin, onNavigateToSignup }) {
+    const [role, setRole] = useState('CUSTOMER')
+    const [error, setError] = useState('')
+    const [loading, setLoading] = useState(false)
+    const [form, setForm] = useState({
+        email: '',
+        password: ''
+    })
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value })
+    }
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setError('')
+        setLoading(true)
+        try {
+            const res = await fetch('http://localhost:4000/api/auth/login', {
+                method: 'POST',
+                headers: { "Content-Type": 'application/json' },
+                body: JSON.stringify({ ...form, role })
+            })
+            const user = await res.json()
+            if (!res.ok) throw new Error(user.message || 'Login Faild')
+            alert('Logging successfully')
+            onLogin && onLogin(role)
+        } catch (error) {
+            console.log(error)
+            setError(error.message)
+        }
+        finally {
+            setLoading(false)
+        }
+
+    }
     return (
         <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden relative gradient-bg">
             {/* animate circle  */}
@@ -72,12 +107,16 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
                     <h2 className="text-2xl text-white font-bold mb-6">Welcome Back</h2>
-                    <div className="space-y-4 mb-6">
+                    <form onSubmit={handleSubmit} className="space-y-4 mb-6" >
                         <div>
                             <label className="text-sm text-slate-300 mb-2 block">Email</label>
                             <input type="email"
                                 placeholder="your@email.com"
                                 className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                name="email"
+                                value={form.email}
+                                required
+                                onChange={handleChange}
                             />
                         </div>
                         <div>
@@ -85,31 +124,40 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                             <input type="password"
                                 placeholder="••••••••"
                                 className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
+                                name="password"
+                                value={form.password}
+                                required
+                                onChange={handleChange}
                             />
                         </div>
-                    </div>
-                    <div className="space-y-3">
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <button
-                                onClick={() => onLogin('customer')}
-                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
-                                Login as Customer
-                            </button>
-                        </motion.div>
-                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                            <button
-                                onClick={() => onLogin('shopkeeper')}
-                                className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
-                                Login as Shopkeeper
-                            </button>
-                            <div className="text-center mt-6">
-                                <a href="#" className="text-sm text-slate-400 hover:text-orange-500 transition-colors">
-                                    Forgot password?
-                                </a>
-                            </div>
-                        </motion.div>
 
-                    </div>
+                        {error && <p className="text-red-500 text-sm py-2">{error}</p>}
+                        <div className="space-y-3">
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                <button
+                                    onClick={() => setRole('CUSTOMER')}
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
+                                    {loading ? "Logging in..." : "Login as Customer"}
+                                </button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                <button
+                                    onClick={() => setRole('SHOPKEEPER')}
+                                    type="submit"
+                                    className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
+                                    {loading ? "Logging in..." : 'Login as Shopkeeper'}
+                                </button>
+                                <div className="text-center mt-6">
+                                    <a href="#" className="text-sm text-slate-400 hover:text-orange-500 transition-colors">
+                                        Forgot password?
+                                    </a>
+                                </div>
+                            </motion.div>
+
+                        </div>
+                    </form>
                 </motion.div >
                 <p className="text-center text-slate-500 text-sm mt-6">
                     Don't have an account?{" "}

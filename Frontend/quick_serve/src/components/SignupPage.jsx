@@ -3,7 +3,7 @@ import { Lock, Mail, Phone, User, Zap } from "lucide-react";
 import { useState } from "react";
 
 export function SignupPage({ onSignup, onNavigateToLogin }) {
-    const [role, setRole] = useState('customer');
+    const [role, setRole] = useState('CUSTOMER');
     const [form, setForm] = useState({
         name: '',
         email: '',
@@ -21,15 +21,15 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
-        if (password !== confirmPassword) {
+        if (form.password !== form.confirmPassword) {
             setError('Password not match')
             return
         }
         setLoading(true)
         try {
-            const res = await fetch('http://localhost:5000/api/signup', {
+            const res = await fetch('http://localhost:4000/api/auth/signup', {
                 method: 'POST',
-                content: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...form, role })
             })
             const data = await res.json();
@@ -109,7 +109,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                 </motion.div>
                 <motion.div
                     className="glass rounded-2xl p-8 glow-orange"
-                    initial={{ opacit: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
@@ -118,16 +118,16 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                     <div className="flex gap-3 mb-6">
                         <motion.div
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setRole('customer')}
-                            className={`flex-1 p-3 rounded-xl text-center transition-all duration-300 ${role === 'customer' ? 'gradient-orange text-slate-900'
+                            onClick={() => setRole('CUSTOMER')}
+                            className={`flex-1 p-3 rounded-xl text-center transition-all duration-300 ${role === 'CUSTOMER' ? 'gradient-orange text-slate-900'
                                 : 'glass border border-slate-700 text-slate-400 hover:border-orange-500/50'}`}
                         >
                             Customer
                         </motion.div>
                         <motion.div
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setRole('shopkeeper')}
-                            className={`flex-1 p-3 rounded-xl text-center transition-all duration-300 ${role === 'shopkeeper' ? 'gradient-orange text-slate-900'
+                            onClick={() => setRole('SHOPKEEPER')}
+                            className={`flex-1 p-3 rounded-xl text-center transition-all duration-300 ${role === 'SHOPKEEPER' ? 'gradient-orange text-slate-900'
                                 : 'glass border border-slate-700 text-slate-400 hover:border-orange-500/50'}`}
                         >
                             Shopkeeper
@@ -168,8 +168,9 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                                 <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
                                     <Phone className="w-4 h-4" />Phone Number
                                 </label>
-                                <input type="tel"
-                                    placeholder="+91-9234 567 890"
+                                <input
+                                    type="number"
+                                    pattern="[0-9]{10}"
                                     className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
                                     name="phone"
                                     required
@@ -184,7 +185,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                                 <input type="password"
                                     placeholder="••••••••"
                                     className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                                     name="password"
+                                    name="password"
                                     required
                                     value={form.password}
                                     onChange={handleChange}
@@ -197,24 +198,23 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                                 <input type="password"
                                     placeholder="••••••••"
                                     className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                                     name="confirmPassword"
+                                    name="confirmPassword"
                                     required
                                     value={form.confirmPassword}
                                     onChange={handleChange}
                                 />
                             </div>
                         </div>
-                    
-                     {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <button
-                            onClick={() => onSignup(role)}
-                            type="submit"
-                            disabled={loading}
-                            className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
-                            { loading ?  "Creating..." : "Create Account"}
-                        </button>
-                    </motion.div>
+
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
+                                {loading ? "Creating..." : "Create Account"}
+                            </button>
+                        </motion.div>
                     </form>
                     <div className="text-center mt-4">
                         <p className="text-sm text-slate-400">
