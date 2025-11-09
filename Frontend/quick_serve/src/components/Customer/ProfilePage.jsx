@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { User, Mail, Phone, MapPin, LogOut, Edit, Shield, Bell, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
 import { Switch } from "../../assets/ui/switch";
+import { EditProfilePage } from "./ProfileEdit";
 
 
 
@@ -11,6 +12,9 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
   const handleLogout = () => {
     onNavigate('login');
   };
+  const handelEdit =()=>{
+        
+  }
 
   return (
     <div className="min-h-screen gradient-bg pb-24">
@@ -175,6 +179,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
         >
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <button
+              onClick={handelEdit}
               variant="outline"
               className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20a rounded-xl flex items-center justify-center"
             >
