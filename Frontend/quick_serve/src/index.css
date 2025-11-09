@@ -54,6 +54,12 @@ html {
   .glow-orange {
     box-shadow: 0 0 20px #f9731666;
   }
+  .glow-green {
+    box-shadow: 0 0 20px #7cf75d66;
+  }
+  .glow-white {
+    box-shadow: 0 0 20px #f8f9f766;
+  }
 }
 
 @theme inline {

@@ -42,10 +42,10 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           className="glass rounded-2xl p-6 mb-6"
         >
           <div className="flex items-center gap-4 mb-6">
-            {/* <Avatar className="w-20 h-20 border-2 border-orange-500">
+            <Avatar className="w-20 h-20 border-2 border-orange-500">
               <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200" />
               <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">JD</AvatarFallback>
-            </Avatar> */}
+            </Avatar>
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-white mb-1">John Doe</h2>
               <p className="text-slate-400 capitalize">{userRole}</p>
@@ -60,23 +60,23 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white mb-1">
+          <div className="grid grid-cols-3 gap-4 border border-slate-700 p-6 rounded-2xl">
+            <div className="text-center rounded-b-full glow-white p-3">
+              <div className="text-xl font-bold text-white mb-1 lg:text-3xl ">
                 {userRole === 'customer' ? '24' : '156'}
               </div>
               <div className="text-xs text-slate-400">
                 {userRole === 'customer' ? 'Orders' : 'Total Orders'}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-400 mb-1">
+            <div className="text-center rounded-b-full glow-green p-3">
+              <div className="text-xl font-bold text-green-400 mb-1 lg:text-3xl">
                 {userRole === 'customer' ? '4.8' : '4.9'}
               </div>
               <div className="text-xs text-slate-400">Rating</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-400 mb-1">
+            <div className="text-center rounded-b-full glow-orange p-3">
+              <div className="text-xl font-bold text-orange-400 mb-1 lg:text-3xl">
                 {userRole === 'customer' ? '$240' : '$4,250'}
               </div>
               <div className="text-xs text-slate-400">Total Spent</div>
@@ -89,7 +89,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-6 mb-6"
+          className="glass rounded-2xl p-6 mb-6 border border-slate-700 "
         >
           <h3 className="text-lg font-bold text-white mb-4">Account Details</h3>
 
@@ -131,7 +131,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="glass rounded-2xl p-6 mb-6"
+          className="glass rounded-2xl p-6 mb-6 border border-slate-700"
         >
           <h3 className="text-lg font-bold text-white mb-4">Preferences</h3>
 
@@ -189,18 +189,18 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <button
               variant="outline"
-              className="w-full h-12 glass border-slate-700 text-white hover:bg-slate-800 rounded-xl"
+              className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20a rounded-xl flex items-center justify-center"
             >
               <User className="w-5 h-5 mr-2" />
               Edit Profile
             </button>
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex justify-center items-center">
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <button
               onClick={handleLogout}
               variant="outline"
-              className="w-full h-12 border border-red-500/50 text-red-500 hover:bg-red-500/10 rounded-xl text-center"
+              className="w-full h-12 bg-red-600/10 border-red-500/50 text-red-500 hover:bg-red-500/20 rounded-xl flex items-center justify-center"
             >
               <LogOut className="w-5 h-5 mr-2" />
               Logout

@@ -23,9 +23,10 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                 headers: { "Content-Type": 'application/json' },
                 body: JSON.stringify({ ...form, role })
             })
-            const user = await res.json()
-            if (!res.ok) throw new Error(user.message || 'Login Faild')
-            alert('Logging successfully')
+            const loginUser = await res.json()
+            if (!res.ok) throw new Error(loginUser.message || 'Login Faild')
+            console.log(loginUser)
+            alert( loginUser.message || 'Login Successful')
             onLogin && onLogin(role)
         } catch (error) {
             console.log(error)

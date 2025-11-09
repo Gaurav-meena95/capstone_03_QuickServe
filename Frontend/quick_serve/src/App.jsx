@@ -26,8 +26,8 @@ function App() {
   return (
     <div className='size-full bg-slate-900 overflow-hidden'>
       {/* <LoginPage/>
-      <SignupPage/> */}
-      {/* <CustomerHome/> */}
+      <SignupPage/>
+      <CustomerHome/> */}
       <ProfilePage/>
       <div className="flex min-h-svh flex-col items-center justify-center">
 
