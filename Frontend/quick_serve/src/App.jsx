@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { SignupPage } from './components/SignupPage'
 import { LoginPage } from './components/LoginPage'
 import { SplashScreen } from './components/SplashScreen'
-import { CustomerHome } from './components/CustomerHome'
-import { ProfilePage } from './components/ProfilePage'
+import { CustomerHome } from './components/Customer/CustomerHome'
+import { ProfilePage } from './components/Customer/ProfilePage'
+import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
+import { EditProfilePage } from './components/Customer/ProfileEdit'
 
 
 function App() {
@@ -28,7 +30,9 @@ function App() {
       {/* <LoginPage/>
       <SignupPage/>
       <CustomerHome/> */}
-      <ProfilePage/>
+      {/* <ProfilePage/> */}
+      {/* <ShopkeeperDashboard/> */}
+      <EditProfilePage/>
       <div className="flex min-h-svh flex-col items-center justify-center">
 
       </div>
