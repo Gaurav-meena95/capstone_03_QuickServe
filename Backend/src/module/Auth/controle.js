@@ -53,12 +53,19 @@ async function login(req, res) {
                 const jwtToken = await jwt.sign(
                     { id: existing.id, email: existing.email, role: existing.role },
                     sec_key,
-                    { expiresIn: "1h" }
+                    { expiresIn: '2Sec' }
                 )
+                const refreshToken = await jwt.sign(
+                    { id: existing.id, email: existing.email, role: existing.role },
+                    sec_key,
+                    { expiresIn: '1HR' }
+                )
+                console.log(refreshToken)
                 return res.status(200).json({
                     message: "Login Successfully",
                     user: existing,
-                    token: jwtToken
+                    token: jwtToken,
+                    refreshToken
                 });
 
             } else {
@@ -72,5 +79,12 @@ async function login(req, res) {
     }
 
 }
+async function check(req, res) {
+    try {
+        return res.status(200).json({ msg: 'hello world' })
+    } catch (error) {
 
-module.exports = { signup, login }
+    }
+}
+
+module.exports = { signup, login, check }
