@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SignupPage } from './components/auth/SignupPage'
 import { LoginPage } from './components/auth/LoginPage'
 import { SplashScreen } from './components/SplashScreen'
@@ -15,78 +15,106 @@ function App() {
   const [currentPage, SetCurrentPage] = useState('login')
   const [userRole, setUserRole] = useState(null);
   const [SidebarOpen, setSidebarOpen] = useState(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Check for stored tokens on mount
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken')
+    const storedRole = localStorage.getItem('userRole')
+    
+    if (token && storedRole) {
+      setUserRole(storedRole)
+      if (storedRole === 'CUSTOMER') {
+        SetCurrentPage("customer-home")
+      } else if (storedRole === 'SHOPKEEPER') {
+        SetCurrentPage("shopkeeper-dashboard")
+      }
+    }
+  }, [])
 
   const handleLogin = (role) => {
     setUserRole(role)
+    localStorage.setItem('userRole', role)
     if (role === 'CUSTOMER') {
       SetCurrentPage("customer-home")
     } else if (role === 'SHOPKEEPER') {
-      SetCurrentPage("shopkeeper-dashbord")
+      SetCurrentPage("shopkeeper-dashboard")
     }
   }
 
   const handleNagivate = (page) => {
     if (page == 'login') {
       setUserRole(null)
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('userRole')
     }
     SetCurrentPage(page)
   }
 
   // render page 
 
-const renderPage = () => {
-  switch (currentPage) {
-    case 'login':
-      return (
-        <LoginPage
-          onLogin={handleLogin}
-          onNavigateToSignup={() => SetCurrentPage('signup')}
-          onNavigate={handleNagivate} 
-        />
-      );
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'login':
+        return (
+          <LoginPage
+            onLogin={handleLogin}
+            onNavigateToSignup={() => SetCurrentPage('signup')}
+            onNavigate={handleNagivate}
+            onForgotPassword={() => setShowForgotPassword(true)}
+          />
+        );
 
-    case 'signup':
-      return (
-        <SignupPage
-          onSignup={handleLogin}
-          onNavigateToLogin={() => SetCurrentPage('login')}
-          onNavigate={handleNagivate} 
-        />
-      );
+      case 'signup':
+        return (
+          <SignupPage
+            onSignup={handleLogin}
+            onNavigateToLogin={() => SetCurrentPage('login')}
+            onNavigate={handleNagivate}
+          />
+        );
 
-    case "customer-home":
-      return <CustomerHome onNavigate={handleNagivate} />;
+      case "customer-home":
+        return <CustomerHome onNavigate={handleNagivate} />;
 
-    case "shopkeeper-dashboard":
-      return <ShopkeeperDashboard />;
+      case "shopkeeper-dashboard":
+        return <ShopkeeperDashboard onNavigate={handleNagivate} />;
 
-    case 'profile':
-      return (
-        <ProfilePage
-          onNavigate={handleNagivate}
-          userRole={userRole}
-        />
-      );
-    case 'edit-profile':
-      return <EditProfilePage/>
-    default:
-      return <LoginPage onLogin={handleLogin} />;
-  }
-};
+      case 'profile':
+        return (
+          <ProfilePage
+            onNavigate={handleNagivate}
+            userRole={userRole}
+          />
+        );
+      case 'edit-profile':
+        return (
+          <EditProfilePage 
+            onNavigate={handleNagivate} 
+            userRole={userRole}
+          />
+        )
+      default:
+        return <LoginPage onLogin={handleLogin} />;
+    }
+  };
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowsplash(false)} />
   }
+  
   return (
     <div className='size-full bg-slate-900 overflow-hidden'>
-      <ForgotPasswordPage/>
+      {showForgotPassword && (
+        <ForgotPasswordPage onClose={() => setShowForgotPassword(false)} />
+      )}
       {userRole === 'SHOPKEEPER' && (
-        <ShopkeeperSidebar/>
+        <ShopkeeperSidebar onNavigate={handleNagivate} />
       )}
       <div className={`size-full ${userRole === "SHOPKEEPER" ? "lg:ml-72" : ""}`}>
         {renderPage()}
       </div>
-
     </div>
   )
 }

@@ -32,6 +32,15 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
             })
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Faild')
+            
+            // Store tokens in localStorage
+            if (loginUser.token) {
+                localStorage.setItem('accessToken', loginUser.token)
+            }
+            if (loginUser.refreshToken) {
+                localStorage.setItem('refreshToken', loginUser.refreshToken)
+            }
+            
             console.log(loginUser)
             alert(loginUser.message || 'Login Successful')
             onLogin && onLogin(role)
@@ -158,9 +167,12 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                                     {loading ? "Logging in..." : 'Login as Shopkeeper'}
                                 </button>
                                 <div className="text-center mt-6">
-                                    <a href="#" className="text-sm text-slate-400 hover:text-orange-500 transition-colors">
+                                    <button 
+                                        onClick={() => onNavigate && onNavigate('forgot-password')}
+                                        className="text-sm text-slate-400 hover:text-orange-500 transition-colors"
+                                    >
                                         Forgot password?
-                                    </a>
+                                    </button>
                                 </div>
                             </motion.div>
 

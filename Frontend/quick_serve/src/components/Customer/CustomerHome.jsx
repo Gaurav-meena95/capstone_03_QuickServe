@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User } from "lucide-react";
+import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User, ArrowLeft } from "lucide-react";
 import { ProfilePage } from './ProfilePage';
 
 
@@ -29,9 +29,11 @@ export function CustomerHome({onNavigate}) {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-center justify-between mb-8 bg-gradient-to-r from-slate-900/20 to-blue-900/10 p-5 rounded-xl"
                 >
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-1">Hey, Foodie! 👋</h1>
-                        <p className="text-slate-400">What's on your mind today?</p>
+                    <div className="flex items-center gap-3">
+                        <div>
+                            <h1 className="text-3xl font-bold text-white mb-1">Hey, Foodie! 👋</h1>
+                            <p className="text-slate-400">What's on your mind today?</p>
+                        </div>
                     </div>
                     <motion.div
                         whileHover={{ scale: 1.05 }}

@@ -11,7 +11,12 @@ const menuItems = [
 ];
 
 export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
-  
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userRole')
+    onNavigate('login');
+  };
   return (
     <>
       {/* Mobile Overlay */}
@@ -139,8 +144,8 @@ export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onNavigate('login')}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:border-red-500/50 border border-transparent transition-all"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 hover:border-red-500/50 border border-transparent transition-all hover:cursor-pointer"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>

@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import { User, Mail, Phone, MapPin, LogOut, Edit, Shield, Bell, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
-import { Switch } from "../../assets/ui/switch";
-import { EditProfilePage } from "./ProfileEdit";
+import { Switch } from "../../assets/ui/switch";  
 
 
 
@@ -10,7 +9,9 @@ import { EditProfilePage } from "./ProfileEdit";
 
 export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
   const handleLogout = () => {
-    handleNagivate ()
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userRole')
     onNavigate('login');
   };
   const handelEdit =()=>{
@@ -58,6 +59,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handelEdit}
               className="w-10 h-10 rounded-xl glass border border-orange-500/50 flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
             >
               <Edit className="w-5 h-5" />
