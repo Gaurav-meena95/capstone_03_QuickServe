@@ -40,12 +40,12 @@ const generateNewToken = (decode) => {
     const accessToken = jwt.sign(
         { id: decode.id, email: decode.email, role: decode.role },
         sec_key,
-        { expiresIn: '1Sec' }
+        { expiresIn: '1h' }
     )
     const refreshToken = jwt.sign(
         { id: decode.id, email: decode.email, role: decode.role },
         sec_key,
-        { expiresIn: '1HR' }
+        { expiresIn: '7d' }
     )
     return { accessToken, refreshToken }
 }

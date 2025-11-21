@@ -2,7 +2,7 @@ import { easeInOut, motion } from "framer-motion"
 import { Zap } from "lucide-react"
 import { useState } from "react"
 
-export function LoginPage({ onLogin, onNavigateToSignup }) {
+export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
     const [role, setRole] = useState('CUSTOMER')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -10,6 +10,13 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
         email: '',
         password: ''
     })
+    const loginAsShopkeeper = () => {
+        setRole('SHOPKEEPER')
+
+    }
+    const loginAsCustomer = () => {
+        setRole('CUSTOMER')  
+    }
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
@@ -26,8 +33,9 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Faild')
             console.log(loginUser)
-            alert( loginUser.message || 'Login Successful')
+            alert(loginUser.message || 'Login Successful')
             onLogin && onLogin(role)
+            onNavigate && onNavigate(role === 'SHOPKEEPER' ? 'shopkeeper-dashboard' : 'customer-home')
         } catch (error) {
             console.log(error)
             setError(error.message)
@@ -135,7 +143,7 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                         <div className="space-y-3">
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <button
-                                    onClick={() => setRole('CUSTOMER')}
+                                    onClick={loginAsCustomer}
                                     type="submit"
                                     disabled={loading}
                                     className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
@@ -144,7 +152,7 @@ export function LoginPage({ onLogin, onNavigateToSignup }) {
                             </motion.div>
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <button
-                                    onClick={() => setRole('SHOPKEEPER')}
+                                    onClick={loginAsShopkeeper}
                                     type="submit"
                                     className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
                                     {loading ? "Logging in..." : 'Login as Shopkeeper'}

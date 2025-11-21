@@ -11,6 +11,7 @@ const menuItems = [
 ];
 
 export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
+  
   return (
     <>
       {/* Mobile Overlay */}

@@ -53,12 +53,12 @@ async function login(req, res) {
                 const jwtToken = await jwt.sign(
                     { id: existing.id, email: existing.email, role: existing.role },
                     sec_key,
-                    { expiresIn: '2Sec' }
+                    { expiresIn: '1h' }
                 )
                 const refreshToken = await jwt.sign(
                     { id: existing.id, email: existing.email, role: existing.role },
                     sec_key,
-                    { expiresIn: '1HR' }
+                    { expiresIn: '7d' }
                 )
                 console.log(refreshToken)
                 return res.status(200).json({
@@ -79,12 +79,6 @@ async function login(req, res) {
     }
 
 }
-async function check(req, res) {
-    try {
-        return res.status(200).json({ msg: 'hello world' })
-    } catch (error) {
 
-    }
-}
 
-module.exports = { signup, login, check }
+module.exports = { signup, login }

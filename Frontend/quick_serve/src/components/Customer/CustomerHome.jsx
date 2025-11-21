@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User } from "lucide-react";
+import { ProfilePage } from './ProfilePage';
 
 
 
-export function CustomerHome() {
+export function CustomerHome({onNavigate}) {
     const nearbyShops = [
         { id: 1, name: "Burger Palace", rating: 4.8, distance: "0.5 km", category: "Fast Food", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
         { id: 2, name: "Pizza Heaven", rating: 4.9, distance: "0.8 km", category: "Italian", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
@@ -14,6 +15,11 @@ export function CustomerHome() {
         { id: 1, name: "Taco Fiesta", rating: 4.9, orders: 24, image: "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400" },
         { id: 2, name: "Curry House", rating: 4.6, orders: 18, image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400" },
     ];
+
+    const profile = ()=>{
+            onNavigate("profile");
+
+    }
     return (
         <div className="min-h-screen pb-24 gradient-bg">
             <div className="p-10 pt-8">
@@ -31,7 +37,7 @@ export function CustomerHome() {
                         whileHover={{ scale: 1.05 }}
                         className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center cursor-pointer glow-orange"
                     >
-                        <User/>
+                        <User className="cursor-pointer" onClick={profile}/>
                     </motion.div>
                 </motion.div>
 

@@ -10,10 +10,11 @@ import { EditProfilePage } from "./ProfileEdit";
 
 export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
   const handleLogout = () => {
+    handleNagivate ()
     onNavigate('login');
   };
   const handelEdit =()=>{
-        
+    onNavigate('edit-profile')
   }
 
   return (
