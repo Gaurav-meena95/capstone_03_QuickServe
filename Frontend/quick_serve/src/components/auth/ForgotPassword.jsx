@@ -14,7 +14,6 @@ export function ForgotPasswordPage({ onNavigate }) {
     setMessage('');
 
     try {
-      // Replace with your actual API endpoint
       const res = await fetch('http://localhost:4000/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +104,7 @@ export function ForgotPasswordPage({ onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300"
+                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 hover:cursor-pointer"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
@@ -115,7 +114,7 @@ export function ForgotPasswordPage({ onNavigate }) {
           <div className="text-center mt-6">
             <button
               onClick={() => onNavigate('login')}
-              className="text-sm text-slate-400 hover:text-orange-500 transition-colors"
+              className="text-sm text-slate-400 hover:text-orange-500 transition-colors hover:cursor-pointer"
             >
               Back to Login
             </button>

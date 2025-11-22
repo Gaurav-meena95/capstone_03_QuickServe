@@ -32,8 +32,26 @@ async function signup(req, res) {
                 role: role
             }
         })
+        
+        // Generate JWT tokens (same as login)
+        const jwtToken = await jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            sec_key,
+            { expiresIn: '1h' }
+        )
+        const refreshToken = await jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            sec_key,
+            { expiresIn: '7d' }
+        )
+        
         console.log(user)
-        return res.status(201).json({ message: 'Signup successful' })
+        return res.status(201).json({ 
+            message: 'Signup successful',
+            user: user,
+            token: jwtToken,
+            refreshToken
+        })
     } catch (error) {
         console.log(error)
         res.status(500).json({ 'error': 'Internal Server Error', error: error.message })
@@ -60,7 +78,6 @@ async function login(req, res) {
                     sec_key,
                     { expiresIn: '7d' }
                 )
-                console.log(refreshToken)
                 return res.status(200).json({
                     message: "Login Successfully",
                     user: existing,

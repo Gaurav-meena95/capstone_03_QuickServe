@@ -15,7 +15,7 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
 
     }
     const loginAsCustomer = () => {
-        setRole('CUSTOMER')  
+        setRole('CUSTOMER')
     }
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -32,7 +32,7 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
             })
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Faild')
-            
+
             // Store tokens in localStorage
             if (loginUser.token) {
                 localStorage.setItem('accessToken', loginUser.token)
@@ -40,7 +40,7 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
             if (loginUser.refreshToken) {
                 localStorage.setItem('refreshToken', loginUser.refreshToken)
             }
-            
+
             console.log(loginUser)
             alert(loginUser.message || 'Login Successful')
             onLogin && onLogin(role)
@@ -166,24 +166,25 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                                     className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
                                     {loading ? "Logging in..." : 'Login as Shopkeeper'}
                                 </button>
-                                <div className="text-center mt-6">
-                                    <button 
-                                        onClick={() => onNavigate && onNavigate('forgot-password')}
-                                        className="text-sm text-slate-400 hover:text-orange-500 transition-colors"
-                                    >
-                                        Forgot password?
-                                    </button>
-                                </div>
+
                             </motion.div>
 
                         </div>
                     </form>
+                    <div className="text-center mt-6">
+                        <button
+                            onClick={() => onNavigate && onNavigate('forgot-password')}
+                            className="text-sm text-slate-400 hover:text-orange-500 transition-colors hover:cursor-pointer"
+                        >
+                            Forgot password?
+                        </button>
+                    </div>
                 </motion.div >
                 <p className="text-center text-slate-500 text-sm mt-6">
                     Don't have an account?{" "}
                     <button
                         onClick={onNavigateToSignup}
-                        className="text-orange-500 hover:text-orange-300 transition-colors"
+                        className="text-orange-500 hover:text-orange-300 transition-colors hover:cursor-pointer"
                     >
                         Sign up
                     </button>

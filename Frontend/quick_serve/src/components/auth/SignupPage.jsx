@@ -35,6 +35,13 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Signup failed")
 
+            if (data.token) {
+                localStorage.setItem('accessToken', data.token)
+            }
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken)
+            }
+
             alert("Account created successfully!");
             onSignup && onSignup(role);
         } catch (error) {
@@ -211,7 +218,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
+                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 hover:cursor-pointer">
                                 {loading ? "Creating..." : "Create Account"}
                             </button>
                         </motion.div>
@@ -230,7 +237,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                     Already have an account?{" "}
                     <button
                         onClick={onNavigateToLogin}
-                        className="text-orange-500 hover:text-orange-300 transition-colors"
+                        className="text-orange-500 hover:text-orange-300 transition-colors hover:cursor-pointer"
                     >
                         Log in
                     </button>

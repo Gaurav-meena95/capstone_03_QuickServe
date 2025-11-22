@@ -37,7 +37,7 @@ export function CustomerHome({onNavigate}) {
                     </div>
                     <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center cursor-pointer glow-orange"
+                        className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center cursor-pointer glow-orange hover:cursor-pointer"
                     >
                         <User className="cursor-pointer" onClick={profile}/>
                     </motion.div>
@@ -54,7 +54,7 @@ export function CustomerHome({onNavigate}) {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => onNavigate('shop-menu')}
-                        className="w-full glass rounded-2xl p-6 relative overflow-hidden group cursor-pointer"
+                        className="w-full glass rounded-2xl p-6 relative overflow-hidden group cursor-pointer hover:cursor-pointer"
                     >
                         <motion.div
                             className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-green-500/20"
@@ -115,7 +115,7 @@ export function CustomerHome({onNavigate}) {
                                 transition={{ delay: 0.1 * index }}
                                 whileHover={{ y: -10 }}
                                 onClick={() => onNavigate('shop-menu')}
-                                className="min-w-[280px] glass rounded-2xl overflow-hidden cursor-pointer group"
+                                className="min-w-[280px] glass rounded-2xl overflow-hidden cursor-pointer group hover:cursor-pointer"
                             >
                                 <div className="relative h-40 overflow-hidden">
                                     <img
@@ -169,7 +169,7 @@ export function CustomerHome({onNavigate}) {
                                 animate={{ opacity: 1, x: 0 }}
                                 whileHover={{ x: 5 }}
                                 onClick={() => onNavigate('shop-menu')}
-                                className="glass rounded-2xl  p-4 flex items-center gap-4 cursor-pointer bg-slate-700/30  hover:bg-slate-400/10 transition "
+                                className="glass rounded-2xl  p-4 flex items-center gap-4 cursor-pointer bg-slate-700/30  hover:bg-slate-400/10 transition hover:cursor-pointer"
                             >
                                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
                                     <img

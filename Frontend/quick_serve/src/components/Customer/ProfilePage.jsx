@@ -32,7 +32,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
             <button
               onClick={onOpenSidebar}
               variant="ghost"
-              className="lg:hidden text-white hover:bg-slate-800"
+              className="lg:hidden text-white hover:bg-slate-800 hover:cursor-pointer"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -60,7 +60,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handelEdit}
-              className="w-10 h-10 rounded-xl glass border border-orange-500/50 flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors"
+              className="w-10 h-10 rounded-xl glass border border-orange-500/50 flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors hover:cursor-pointer"
             >
               <Edit className="w-5 h-5" />
             </motion.button>
@@ -184,7 +184,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
             <button
               onClick={handelEdit}
               variant="outline"
-              className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20a rounded-xl flex items-center justify-center"
+              className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20a rounded-xl flex items-center justify-center hover:cursor-pointer"
             >
               <User className="w-5 h-5 mr-2" />
               Edit Profile
@@ -195,7 +195,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
             <button
               onClick={handleLogout}
               variant="outline"
-              className="w-full h-12 bg-red-600/10 border-red-500/50 text-red-500 hover:bg-red-500/20 rounded-xl flex items-center justify-center"
+              className="w-full h-12 bg-red-600/10 border-red-500/50 text-red-500 hover:bg-red-500/20 rounded-xl flex items-center justify-center hover:cursor-pointer"
             >
               <LogOut className="w-5 h-5 mr-2" />
               Logout

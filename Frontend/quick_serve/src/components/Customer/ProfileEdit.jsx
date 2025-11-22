@@ -34,7 +34,7 @@ export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
                     <div className="flex items-center gap-3">
                         <Button
                             variant="ghost"
-                            className="text-white hover:bg-slate-800"
+                            className="text-white hover:bg-slate-800 hover:cursor-pointer"
                             onClick={() => onNavigate("profile")}
                         >
                             <ArrowLeft className="w-5 h-5" />
@@ -43,7 +43,7 @@ export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
                     </div>
 
                     {userRole === "shopkeeper" && onOpenSidebar && (
-                        <Button onClick={onOpenSidebar} variant="ghost" className="lg:hidden text-white hover:bg-slate-800">
+                        <Button onClick={onOpenSidebar} variant="ghost" className="lg:hidden text-white hover:bg-slate-800 hover:cursor-pointer">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
@@ -140,14 +140,14 @@ export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
                 >
                     <Button
                         variant="outline"
-                        className="h-12  hover:bg-slate-300"
+                        className="h-12  hover:bg-slate-300 hover:cursor-pointer"
                         onClick={handleCancel}
                     >
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Cancel
                     </Button>
                     <Button
-                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white"
+                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white hover:cursor-pointer"
                         onClick={handleSave}
                     >
                         <Save className="w-5 h-5 mr-2" />
