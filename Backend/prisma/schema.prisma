@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  name        String
-  email       String       @unique
-  phone       String?      @unique
-  password    String
-  address     String?
-  avatarUrl   String?
-  role        Role         @default(CUSTOMER)
-  preferences Preferences?
-  orders      Order[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime?    @updatedAt
+  id               Int          @id @default(autoincrement())
+  name             String
+  email            String       @unique
+  phone            String?      @unique
+  password         String
+  address          String?
+  avatarUrl        String?
+  role             Role         @default(CUSTOMER)
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  preferences      Preferences?
+  orders           Order[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime?    @updatedAt
 }
 
 model Preferences {

@@ -8,6 +8,7 @@ import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
 import { EditProfilePage } from './components/Customer/ProfileEdit'
 import { ShopkeeperSidebar } from './components/Shopkeeper/Sidebar'
 import { ForgotPasswordPage } from './components/auth/ForgotPassword'
+import { ResetPasswordPage } from './components/auth/ResetPassword'
 
 
 function App() {
@@ -15,13 +16,19 @@ function App() {
   const [currentPage, SetCurrentPage] = useState('login')
   const [userRole, setUserRole] = useState(null);
   const [SidebarOpen, setSidebarOpen] = useState(null);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Check for stored tokens on mount
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
     const storedRole = localStorage.getItem('userRole')
-    
+
+    // Check if we're on a specific URL path
+    const currentPath = window.location.pathname
+    if (currentPath === '/reset-password' && window.location.search) {
+      SetCurrentPage('reset-password')
+      return
+    }
+
     if (token && storedRole) {
       setUserRole(storedRole)
       if (storedRole === 'CUSTOMER') {
@@ -62,7 +69,6 @@ function App() {
             onLogin={handleLogin}
             onNavigateToSignup={() => SetCurrentPage('signup')}
             onNavigate={handleNagivate}
-            onForgotPassword={() => setShowForgotPassword(true)}
           />
         );
 
@@ -90,25 +96,29 @@ function App() {
         );
       case 'edit-profile':
         return (
-          <EditProfilePage 
-            onNavigate={handleNagivate} 
+          <EditProfilePage
+            onNavigate={handleNagivate}
             userRole={userRole}
           />
         )
+
+      case 'forgot-password':
+        return <ForgotPasswordPage onNavigate={handleNagivate} />;
+
+      case 'reset-password':
+        return <ResetPasswordPage onNavigate={handleNagivate} />;
+
       default:
-        return <LoginPage onLogin={handleLogin} />;
+        return <LoginPage onLogin={handleLogin} onNavigate={handleNagivate} />;
     }
   };
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowsplash(false)} />
   }
-  
+
   return (
     <div className='size-full bg-slate-900 overflow-hidden'>
-      {showForgotPassword && (
-        <ForgotPasswordPage onClose={() => setShowForgotPassword(false)} />
-      )}
       {userRole === 'SHOPKEEPER' && (
         <ShopkeeperSidebar onNavigate={handleNagivate} />
       )}

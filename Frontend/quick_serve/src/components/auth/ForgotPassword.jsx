@@ -19,12 +19,17 @@ export function ForgotPasswordPage({ onNavigate }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.message || 'Failed to send reset link');
-      
-      setMessage('Password reset link has been sent to your email');
+
+      // If we have a resetUrl (development mode), show it to the user
+      if (data.resetUrl) {
+        setMessage(`Reset link generated! Copy this URL and paste it in your browser:\n\n${data.resetUrl}`);
+      } else {
+        setMessage('Password reset link has been sent to your email');
+      }
     } catch (error) {
       console.error(error);
       setError(error.message || 'Something went wrong');
@@ -98,7 +103,7 @@ export function ForgotPasswordPage({ onNavigate }) {
             </div>
 
             {error && <p className="text-red-500 text-sm py-2">{error}</p>}
-            {message && <p className="text-green-500 text-sm py-2">{message}</p>}
+            {message && <p className="text-green-500 text-sm py-2 whitespace-pre-line">{message}</p>}
 
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <button

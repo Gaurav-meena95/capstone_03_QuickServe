@@ -98,4 +98,100 @@ async function login(req, res) {
 }
 
 
-module.exports = { signup, login }
+async function forgotPassword(req, res) {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        
+        if (!user) {
+            // Don't reveal if user exists or not for security
+            return res.status(200).json({ 
+                message: 'If an account exists with this email, a password reset link has been sent' 
+            });
+        }
+
+        // Generate unique reset token
+        const resetToken = require('crypto').randomBytes(32).toString('hex');
+        const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+        // Store hashed token in database
+        const hashedToken = await bcrypt.hash(resetToken, 10);
+        await prisma.user.update({
+            where: { email },
+            data: {
+                resetToken: hashedToken,
+                resetTokenExpiry
+            }
+        });
+
+        // In development, return the reset URL. In production, send via email
+        const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
+        
+        return res.status(200).json({ 
+            message: 'Password reset link has been sent',
+            // Only include resetUrl in development
+            resetUrl: process.env.NODE_ENV === 'production' ? undefined : resetUrl,
+            devNote: process.env.NODE_ENV === 'production' ? undefined : 'Copy this URL to reset your password'
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to process password reset request', error: error.message });
+    }
+}
+
+async function resetPassword(req, res) {
+    try {
+        const { email, token, newPassword } = req.body;
+
+        if (!email || !token || !newPassword) {
+            return res.status(400).json({ message: 'Email, token, and new password are required' });
+        }
+
+        // Validate password strength
+        if (!/(?=.*[!@#$%^&*])(?=.{8,})/.test(newPassword)) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters long and contain one special character"
+            });
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user || !user.resetToken || !user.resetTokenExpiry) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        // Check if token has expired
+        if (new Date() > user.resetTokenExpiry) {
+            return res.status(400).json({ message: 'Reset token has expired' });
+        }
+
+        // Verify token
+        const isTokenValid = await bcrypt.compare(token, user.resetToken);
+        if (!isTokenValid) {
+            return res.status(400).json({ message: 'Invalid reset token' });
+        }
+
+        // Hash new password and update user
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await prisma.user.update({
+            where: { email },
+            data: {
+                password: hashedPassword,
+                resetToken: null,
+                resetTokenExpiry: null
+            }
+        });
+
+        return res.status(200).json({ message: 'Password has been reset successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Failed to reset password', error: error.message });
+    }
+}
+
+module.exports = { signup, login, forgotPassword, resetPassword }
