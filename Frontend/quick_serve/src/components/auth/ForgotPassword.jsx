@@ -24,7 +24,6 @@ export function ForgotPasswordPage({ onNavigate }) {
 
       if (!res.ok) throw new Error(data.message || 'Failed to send reset link');
 
-      // If we have a resetUrl (development mode), show it to the user
       if (data.resetUrl) {
         setMessage(`Reset link generated! Copy this URL and paste it in your browser:\n\n${data.resetUrl}`);
       } else {
