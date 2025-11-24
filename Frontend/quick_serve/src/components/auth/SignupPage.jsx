@@ -1,6 +1,8 @@
-import { easeInOut, motion } from "framer-motion";
+import { easeInOut } from "framer-motion";
 import { Lock, Mail, Phone, User, Zap } from "lucide-react";
 import { useState } from "react";
+import { motion } from "framer-motion"
+
 
 export function SignupPage({ onSignup, onNavigateToLogin }) {
     const [role, setRole] = useState('CUSTOMER');
@@ -14,6 +16,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -27,7 +30,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
         }
         setLoading(true)
         try {
-            const res = await fetch('http://localhost:4000/api/auth/signup', {
+            const res = await fetch(`${backend}/api/auth/signup`, {
                 method: 'POST',
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...form, role })
@@ -186,7 +189,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                                 />
                             </div>
                             <div>
-                                <label className="text-sm flex items-center  gap-2 text-slate-300 mb-2 block">
+                                <label className="text-sm items-center  gap-2 text-slate-300 mb-2 block">
                                     <Lock className="w-4 h-4" />Password
                                 </label>
                                 <input type="password"
@@ -199,7 +202,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                                 />
                             </div>
                             <div>
-                                <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 block">
+                                <label className="text-sm items-center gap-2 text-slate-300 mb-2 block">
                                     <Lock className="w-4 h-4" />Confirm Password
                                 </label>
                                 <input type="password"

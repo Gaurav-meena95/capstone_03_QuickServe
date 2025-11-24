@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
 import { useState } from "react";
+import { motion } from "framer-motion"
+
 
 export function ResetPasswordPage({ onNavigate }) {
     const [newPassword, setNewPassword] = useState('');
@@ -32,7 +33,8 @@ export function ResetPasswordPage({ onNavigate }) {
         }
 
         try {
-            const res = await fetch('http://localhost:4000/api/auth/reset-password', {
+            const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+            const res = await fetch(`${backend}/api/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, token, newPassword })

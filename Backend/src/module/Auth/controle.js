@@ -129,8 +129,8 @@ async function forgotPassword(req, res) {
             }
         });
 
-        // In development, return the reset URL. In production, send via email
-        const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
+        const frontend = process.env.FRONTEND_URL;
+        const resetUrl = `${frontend}/reset-password?token=${resetToken}&email=${email}`;
         
         return res.status(200).json({ 
             message: 'Password reset link has been sent',

@@ -24,8 +24,9 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
         e.preventDefault()
         setError('')
         setLoading(true)
+        const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
         try {
-            const res = await fetch('http://localhost:4000/api/auth/login', {
+            const res = await fetch(`${backend}/api/auth/login`, {
                 method: 'POST',
                 headers: { "Content-Type": 'application/json' },
                 body: JSON.stringify({ ...form, role })

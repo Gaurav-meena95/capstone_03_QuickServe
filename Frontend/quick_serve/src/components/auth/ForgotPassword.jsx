@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
 import { useState } from "react";
+import { motion } from "framer-motion"
 
 export function ForgotPasswordPage({ onNavigate }) {
   const [email, setEmail] = useState('');
@@ -13,8 +13,10 @@ export function ForgotPasswordPage({ onNavigate }) {
     setError('');
     setMessage('');
 
+    const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+
     try {
-      const res = await fetch('http://localhost:4000/api/auth/forgot-password', {
+      const res = await fetch(`${backend}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
