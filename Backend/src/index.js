@@ -11,7 +11,7 @@ app.use(cors())
 app.get('/', (req, res) => res.send("QuickServe API is running ✅"))
 
 app.use('/api/auth',authRoutes )
-// app.use('/api/shops',shopRoutes)
+app.use('/api/shops',shopRoutes)
 
 app.listen(PORT,()=>{
     console.log(`server has started ${PORT}`);

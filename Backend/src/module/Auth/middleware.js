@@ -12,6 +12,7 @@ const verifymiddleware = (req, res, next) => {
         
         const [prefix, token] = Authheader.split(' ')
         
+        
         if (prefix != 'JWT') {
             return res.status(403).json({ message: "Invalid Token" })
         }

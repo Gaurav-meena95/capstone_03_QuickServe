@@ -55,7 +55,6 @@ model Shop {
   id           String     @id @default(cuid())
   name         String
   description  String?
-  slug         String     @unique
   category     String
   image        String?
   logo         String?
@@ -82,7 +81,6 @@ model Shop {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  @@index([slug])
   @@index([category])
   @@index([status])
   @@index([shopkeeperId])

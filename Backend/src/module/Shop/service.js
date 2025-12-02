@@ -1,13 +1,12 @@
 const  prisma  = require('../../config/prismaClient')
 
 exports.createShopForUser = async (userId, payload) => {
-    console.log(payload)
+    if (!payload.name || !payload.category || !payload.address || !payload.city || !payload.pincode) {
+        throw new Error("Missing required fields: name, category, address, city, pincode");
+    }
     const exsiting = await prisma.shop.findUnique({ where: { shopkeeperId: userId } });
     if (exsiting) {
         throw new Error('Shop already exists for this shopkeeper')
-    }
-    if (!payload.name || !payload.category || !payload.address || !payload.city || !payload.pincode) {
-        throw new Error("Missing required fields: name, category, address, city, pincode");
     }
     const shop = await prisma.shop.create({
         data: {
