@@ -1,5 +1,6 @@
 const express = require('express')
 const shopRouter = express.Router()
-const shopController = require('')
+const auth = require('../Auth/middleware')
+const controller = require('./controller')
 
-shopRouter.post('/' ,shopController )
+shopRouter.post('/' ,controller.createShop)

@@ -1,6 +1,7 @@
-const { prisma } = require('../../config/prismaClient')
+const  prisma  = require('../../config/prismaClient')
 
 exports.createShopForUser = async (userId, payload) => {
+    console.log(payload)
     const exsiting = await prisma.shop.findUnique({ where: { shopkeeperId: userId } });
     if (exsiting) {
         throw new Error('Shop already exists for this shopkeeper')
@@ -12,7 +13,6 @@ exports.createShopForUser = async (userId, payload) => {
         data: {
             name: payload.name,
             description: payload.description,
-            slug,
             category: payload.category,
             image: payload.image || null,
             logo: payload.logo || null,
