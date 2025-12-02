@@ -4,7 +4,7 @@ const prisma = require('./config/prismaClient')
 const express = require('express')
 const cors = require('cors')
 
-const authRoutes = require('./module/Auth/auth')
+const authRoutes = require('./module/Auth/routes')
 
 const app = express();
 app.use(express.json())

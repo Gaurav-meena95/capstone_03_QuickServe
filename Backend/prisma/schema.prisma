@@ -1,3 +1,7 @@
+// ============================================
+// Prisma Config
+// ============================================
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,41 +11,333 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id               Int          @id @default(autoincrement())
-  name             String
-  email            String       @unique
-  phone            String?      @unique
-  password         String
-  address          String?
-  avatarUrl        String?
-  role             Role         @default(CUSTOMER)
-  resetToken       String?
-  resetTokenExpiry DateTime?
-  preferences      Preferences?
-  orders           Order[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime?    @updatedAt
-}
-
-model Preferences {
-  id                Int     @id @default(autoincrement())
-  userId            Int     @unique
-  pushNotifications Boolean @default(true)
-  savePaymentInfo   Boolean @default(false)
-  user              User    @relation(fields: [userId], references: [id])
-}
-
-model Order {
-  orderId   Int      @id @default(autoincrement())
-  userId    Int
-  amount    Float
-  status    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-}
-
+// ============================================
+// USER MANAGEMENT
+// ============================================
 enum Role {
   CUSTOMER
   SHOPKEEPER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  phone     String?    @db.VarChar(10)
+  role      Role       @default(CUSTOMER)
+  status    UserStatus @default(ACTIVE)
+  avatar    String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  shop          Shop?
+  addresses     Address[]
+  orders        Order[]
+  favorites     Favorite[]
+  reviews       Review[]
+  payments      Payment[]
+  notifications Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================
+// SHOP MANAGEMENT
+// ============================================
+
+enum ShopStatus {
+  OPEN
+  CLOSED
+  TEMPORARILY_CLOSED
+}
+
+model Shop {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  slug         String     @unique
+  category     String
+  image        String?
+  logo         String?
+  status       ShopStatus @default(OPEN)
+  rating       Float      @default(0)
+  totalRatings Int        @default(0)
+
+  pincode String  @db.VarChar(6)
+  address String
+  city    String
+  state   String?
+
+  openingTime String @default("09:00")
+  closingTime String @default("22:00")
+
+  shopkeeperId String @unique
+  shopkeeper   User   @relation(fields: [shopkeeperId], references: [id], onDelete: Cascade)
+
+  menuItems  MenuItem[]
+  favorites  Favorite[]
+  categories Category[]
+  orders     Order[]
+  reviews    Review[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([shopkeeperId])
+  @@map("shops")
+}
+
+// ============================================
+// CATEGORY & MENU
+// ============================================
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  image       String?
+  order       Int        @default(0)
+  shopId      String
+  shop        Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  menuItems   MenuItem[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([shopId, name])
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  image       String?
+  available   Boolean     @default(true)
+  popular     Boolean     @default(false)
+  shopId      String
+  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("menu_items")
+}
+
+// ============================================
+// ORDER MANAGEMENT
+// ============================================
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderType {
+  NOW
+  SCHEDULED
+}
+
+enum PaymentMethod {
+  CARD
+  WALLET
+  CASH
+  UPI
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id          String @id @default(cuid())
+  token       String @unique
+  orderNumber String @unique
+  customerId  String
+  customer    User   @relation(fields: [customerId], references: [id])
+  shopId      String
+  shop        Shop   @relation(fields: [shopId], references: [id])
+
+  status        OrderStatus @default(PENDING)
+  orderType     OrderType   @default(NOW)
+  scheduledTime DateTime?
+
+  subtotal Float
+  discount Float    @default(0)
+  total    Float
+  address  Address? @relation(fields: [addressId], references: [id])
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  payment       Payment?
+
+  addressId String?
+
+  placedAt    DateTime  @default(now())
+  confirmedAt DateTime?
+  preparingAt DateTime?
+  readyAt     DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+  price      Float
+  subtotal   Float
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@map("order_items")
+}
+
+// ============================================
+// PAYMENT MANAGEMENT
+// ============================================
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String        @unique
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        User          @relation(fields: [customerId], references: [id])
+  amount          Float
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?
+  paymentIntentId String?
+  receiptUrl      String?
+  paidAt          DateTime?
+  refundedAt      DateTime?
+  refundAmount    Float?        @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+// ============================================
+// ADDRESS MANAGEMENT
+// ============================================
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label       String
+  fullAddress String
+  street      String
+  city        String
+  state       String?
+  country     String   @default("USA")
+  zipCode     String?
+  latitude    Float?
+  longitude   Float?
+  isDefault   Boolean  @default(false)
+  orders      Order[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("addresses")
+}
+
+// ============================================
+// FAVORITES & REVIEWS
+// ============================================
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, shopId])
+  @@map("favorites")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shopId    String
+  shop      Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  orderId   String?
+  rating    Int
+  comment   String?
+  status    ReviewStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("reviews")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  ORDER_PLACED
+  ORDER_CONFIRMED
+  ORDER_PREPARING
+  ORDER_READY
+  ORDER_COMPLETED
+  ORDER_CANCELLED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@map("notifications")
 }

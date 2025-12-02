@@ -1,4 +1,4 @@
-// API utility for handling token refresh
+
 export const fetchWithAuth = async (url, options = {}) => {
     const accessToken = localStorage.getItem('accessToken')
     const refreshToken = localStorage.getItem('refreshToken')
