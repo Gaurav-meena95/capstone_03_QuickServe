@@ -1,106 +1,56 @@
-🚀 QuickServe – Smart Food Order Tracking System
+🚀 QuickServe :– Smart Food Order Tracking System
 
 A QR-based smart ordering & real-time tracking system for restaurants and small food outlets.
 
-👤 Developer
+👤 Developer :- Gaurav Meena (2401010169)
 
-Gaurav Meena (2401010169)
-
-🧠 Problem Statement
+ ------: Problem Statement :-------
 
 Local restaurants and small food outlets often face challenges in managing customer orders efficiently during rush hours. Customers, on the other hand, have no visibility into their order status once placed. QuickServe aims to solve this by providing a QR-based food ordering and tracking system where customers can view the live menu, place an order, make online payment, and get a token number with an estimated preparation time and real-time updates when the order is ready.
 
-🏗️ System Architecture
-Frontend (React) → Backend (Express API) → Database (MySQL + Prisma ORM)
+ ------------------: System Architecture :----------------
 
-🛠️ Tech Stack
-Frontend
+Describe or diagram your project structure, e.g.:
+Frontend → Backend (API) → Database
+Tech Stack:
+●   Frontend: React.js, React Router, Axios, TailwindCSS
+●   Backend: Node.js + Express
+●   Database: MySQL (Relational) using Prisma ORM
+●   Authentication: JWT-based login/signup (Customer & Shopkeeper roles)
+●   Hosting:○ Frontend → Netlify/Vercel
+            ○ Backend → Render/Railway
+            ○ Database → PlanetScale / Neon / Aiven MySQL Cloud
 
-React.js
 
-React Router
 
-Axios
+ ------------------: Key Features :----------------
+ | **Category**                   | **Features**                                                            |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| Authentication & Authorization | Secure user/shopkeeper login, signup using JWT                          |
+| CRUD Operations                | Add/Edit/Delete food items, manage menus & orders                       |
+| Frontend Routing               | Home, Login, Dashboard, Menu, Order Details, Profile pages.             |
+| Customer Features              | Scan QR → View menu → Place order → Get token → Track order status      |
+| Advance Features               | Filtering,sorting, searching menu items, live token updates             |
+| Shopkeeper Features            | Manage products, update order status (preparing, ready, completed)      |
+| Hosting                        | Fully deployed frontend and backend with connected MySQL cloud database |
 
-TailwindCSS
 
-Backend
 
-Node.js
+------------------:  API Overview :----------------
 
-Express.js
+| **Endpoint**                | **Method** | **Description**                     | **Access**    |
+| --------------------------- | ---------- | ----------------------------------- | ------------- |
+| /api/auth/signup            | POST       | Register new user/shopkeeper        | Public        |
+| /api/auth/login             | POST       | Authenticate user                   | Public        |
+| /api/products               | GET        | Fetch all available products        | Authenticated |
+| /api/products               | POST       | Add a new product                   | Shopkeeper    |
+| /api/orders                 | POST       | Place a new order                   | Customer      |
+| /api/orders/:id             | PUT        | Update order status                 | Shopkeeper    |
+| /api/orders/:id             | DELETE     | Delete order                        | Admin only    |
+| /api/products/filter?type=  | GET        | Filter menu items by category/type  | Authenticated |
+| /api/products/sort?by=      | GET        | Sort products by price or rating    | Authenticated |
+| /api/products?page=&limit=  | GET        | Paginate product list results       | Authenticated |
+| /api/products/search?query= | GET        | Search products by name or category | Authenticated |
 
-JWT Authentication
-
-Prisma ORM
-
-Database
-
-MySQL (PlanetScale / Neon / Aiven)
-
-Hosting
-
-Frontend hosted on Netlify/Vercel
-
-Backend hosted on Render/Railway
-
-Database hosted on PlanetScale / Neon / Aiven
-
-🧩 Key Features
-
-Secure user/shopkeeper login & signup using JWT
-
-Add/Edit/Delete food items
-
-View menu via QR scan
-
-Place orders directly
-
-Token number generation per order
-
-Real-time tracking of order status
-
-Sorting / Searching / Filtering of menu
-
-Shopkeeper dashboard for order management
-
-Fully cloud-deployed frontend, backend & database
-
-🧾 API Endpoints
-Authentication
-POST   /api/auth/signup
-POST   /api/auth/login
-
-Products
-GET    /api/products
-POST   /api/products                 (Shopkeeper only)
-GET    /api/products/filter?type=
-GET    /api/products/sort?by=
-GET    /api/products?page=&limit=
-GET    /api/products/search?query=
-
-Orders
-POST   /api/orders                   (Customer)
-PUT    /api/orders/:id               (Shopkeeper)
-DELETE /api/orders/:id               (Admin only)
-
-🧪 Evaluation Checklist
-
-✔ Hosted frontend URL working
-✔ Hosted backend URL working
-✔ Database connected to production DB
-✔ Signup inserts hashed password
-✔ Login returns JWT
-✔ JWT validates at jwt.io
-✔ API working via live production URL
-✔ README includes hosted URLs
-✔ Proposal included
-
-📎 Project Proposal Included
-
-Original project proposal file included:
-GAURAV MEENA ap_capstone.pdf
-
-📌 Version
 
 QuickServe v1.0.0
