@@ -46,7 +46,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
             }
 
             alert("Account created successfully!");
-            onSignup && onSignup(role);
+            onSignup && onSignup(role,true);
         } catch (error) {
             console.log(error)
             setError(error.message)
@@ -56,7 +56,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
         }
     }
     return (
-        <div className="min-h-screen gradient-bg flex items-center justify-center overflow-hidden relative p-6">
+        <div className="min-h-screen gradient-bg flex items-center justify-center overflow-hidden relative p-6 ">
             <motion.div
                 className="absolute h-72 w-72 top-20 left-10 bg-orange-600/20 rounded-full blur-3xl"
                 animate={{
