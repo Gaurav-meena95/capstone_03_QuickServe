@@ -38,8 +38,34 @@ exports.createMenuItem = async (userId, payload) => {
         throw new Error('Shop not found for this shopkeeper')
     }
     
-    if (!payload.name || !payload.price || !payload.categoryId) {
-        throw new Error('Missing required fields: name, price, categoryId')
+    if (!payload.name || !payload.price) {
+        throw new Error('Missing required fields: name, price')
+    }
+    
+    // Handle category - create if doesn't exist
+    let categoryId = payload.categoryId;
+    if (!categoryId && payload.category) {
+        // Find or create category
+        let category = await prisma.category.findFirst({
+            where: {
+                shopId: shop.id,
+                name: payload.category
+            }
+        });
+        
+        if (!category) {
+            category = await prisma.category.create({
+                data: {
+                    name: payload.category,
+                    shopId: shop.id
+                }
+            });
+        }
+        categoryId = category.id;
+    }
+    
+    if (!categoryId) {
+        throw new Error('Category is required')
     }
     
     const menuItem = await prisma.menuItem.create({
@@ -47,11 +73,11 @@ exports.createMenuItem = async (userId, payload) => {
             name: payload.name,
             description: payload.description || null,
             price: parseFloat(payload.price),
-            image: payload.image || null,
+            image: payload.imageUrl || payload.image || null,
             available: payload.available !== undefined ? payload.available : true,
             popular: payload.popular !== undefined ? payload.popular : false,
             shopId: shop.id,
-            categoryId: payload.categoryId
+            categoryId: categoryId
         },
         include: {
             category: {
@@ -93,10 +119,32 @@ exports.updateMenuItem = async (userId, itemId, payload) => {
     if (payload.name !== undefined) updateData.name = payload.name
     if (payload.description !== undefined) updateData.description = payload.description
     if (payload.price !== undefined) updateData.price = parseFloat(payload.price)
+    if (payload.imageUrl !== undefined) updateData.image = payload.imageUrl
     if (payload.image !== undefined) updateData.image = payload.image
     if (payload.available !== undefined) updateData.available = payload.available
     if (payload.popular !== undefined) updateData.popular = payload.popular
-    if (payload.categoryId !== undefined) updateData.categoryId = payload.categoryId
+    
+    // Handle category update
+    if (payload.category && !payload.categoryId) {
+        let category = await prisma.category.findFirst({
+            where: {
+                shopId: shop.id,
+                name: payload.category
+            }
+        });
+        
+        if (!category) {
+            category = await prisma.category.create({
+                data: {
+                    name: payload.category,
+                    shopId: shop.id
+                }
+            });
+        }
+        updateData.categoryId = category.id;
+    } else if (payload.categoryId !== undefined) {
+        updateData.categoryId = payload.categoryId
+    }
     
     const updatedItem = await prisma.menuItem.update({
         where: { id: itemId },

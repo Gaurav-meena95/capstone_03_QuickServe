@@ -11,6 +11,8 @@ import { ShopkeeperSidebar } from './components/Shopkeeper/Sidebar'
 import { ShopForm } from './components/Shopkeeper/ShopForm'
 import { MenuManager } from './components/Shopkeeper/MenuManager'
 import { QRPage } from './components/Shopkeeper/QRPage'
+import { AnalyticsPage } from './components/Shopkeeper/AnalyticsPage'
+import { SettingsPage } from './components/Shopkeeper/Setting'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ShopCheck } from './components/Shopkeeper/ShopCheck'
 import { ForgotPasswordPage } from './components/auth/ForgotPassword'
@@ -146,6 +148,14 @@ function ShopkeeperLayout() {
           <Route
             path="qr-page"
             element={<QRPage />}
+          />
+          <Route
+            path="analytics"
+            element={<AnalyticsPage />}
+          />
+          <Route
+            path="settings"
+            element={<SettingsPage />}
           />
           <Route
             path="shop/create"
