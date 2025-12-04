@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion'
-import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User, ArrowLeft } from "lucide-react";
-import { ProfilePage } from './ProfilePage';
+import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User } from "lucide-react";
+import { useNavigate } from 'react-router-dom'
 
-
-
-export function CustomerHome({onNavigate}) {
+export function CustomerHome() {
+    const navigate = useNavigate()
+    
     const nearbyShops = [
         { id: 1, name: "Burger Palace", rating: 4.8, distance: "0.5 km", category: "Fast Food", image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
         { id: 2, name: "Pizza Heaven", rating: 4.9, distance: "0.8 km", category: "Italian", image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400" },
@@ -15,11 +15,6 @@ export function CustomerHome({onNavigate}) {
         { id: 1, name: "Taco Fiesta", rating: 4.9, orders: 24, image: "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=400" },
         { id: 2, name: "Curry House", rating: 4.6, orders: 18, image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400" },
     ];
-
-    const profile = ()=>{
-            onNavigate("profile");
-
-    }
     return (
         <div className="min-h-screen pb-24 gradient-bg">
             <div className="p-10 pt-8">
@@ -37,9 +32,11 @@ export function CustomerHome({onNavigate}) {
                     </div>
                     <motion.div
                         whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => navigate('/customer/profile')}
                         className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center cursor-pointer glow-orange hover:cursor-pointer"
                     >
-                        <User className="cursor-pointer" onClick={profile}/>
+                        <User className="cursor-pointer" />
                     </motion.div>
                 </motion.div>
 
@@ -53,7 +50,7 @@ export function CustomerHome({onNavigate}) {
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => onNavigate('shop-menu')}
+                        onClick={() => navigate('/customer/shop-menu')}
                         className="w-full glass rounded-2xl p-6 relative overflow-hidden group cursor-pointer hover:cursor-pointer"
                     >
                         <motion.div
@@ -114,7 +111,7 @@ export function CustomerHome({onNavigate}) {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.1 * index }}
                                 whileHover={{ y: -10 }}
-                                onClick={() => onNavigate('shop-menu')}
+                                onClick={() => navigate('/customer/shop-menu')}
                                 className="min-w-[280px] glass rounded-2xl overflow-hidden cursor-pointer group hover:cursor-pointer"
                             >
                                 <div className="relative h-40 overflow-hidden">
@@ -168,7 +165,7 @@ export function CustomerHome({onNavigate}) {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 whileHover={{ x: 5 }}
-                                onClick={() => onNavigate('shop-menu')}
+                                onClick={() => navigate('/customer/shop-menu')}
                                 className="glass rounded-2xl  p-4 flex items-center gap-4 cursor-pointer bg-slate-700/30  hover:bg-slate-400/10 transition hover:cursor-pointer"
                             >
                                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">

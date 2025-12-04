@@ -13,7 +13,7 @@ const activeOrders = [
   { id: 4, token: "#12", customer: "Emma Wilson", items: ["Burger x2", "Pizza"], total: 46.17, time: "15m", status: "ready" },
 ];
 
-export function ShopkeeperDashboard({ onNavigate, onOpenSidebar }) {
+export function ShopkeeperDashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null)
 
   const getStatusColor = (status) => {
@@ -35,14 +35,6 @@ export function ShopkeeperDashboard({ onNavigate, onOpenSidebar }) {
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onOpenSidebar}
-              className="w-10 h-10 rounded-xl glass flex items-center justify-center lg:hidden"
-            >
-              <MenuIcon className="w-6 h-6 text-white" />
-            </motion.button>
             <div>
               <h1 className="font-bold text-white text-xl">Dashboard</h1>
               <p className="text-xs text-slate-400">Burger Palace</p>

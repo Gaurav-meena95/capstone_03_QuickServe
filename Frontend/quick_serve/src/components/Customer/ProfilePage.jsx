@@ -1,21 +1,23 @@
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, LogOut, Edit, Shield, Bell, CreditCard } from "lucide-react";
+import { User, Mail, Phone, MapPin, LogOut, Edit, Bell, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
-import { Switch } from "../../assets/ui/switch";  
+import { Switch } from "../../assets/ui/switch";
+import { useNavigate } from 'react-router-dom'
 
-
-
-
-
-export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
+export function ProfilePage() {
+  const navigate = useNavigate()
+  const userRole = localStorage.getItem('userRole')?.toLowerCase() || 'customer'
+  
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('userRole')
-    onNavigate('login');
-  };
-  const handelEdit =()=>{
-    onNavigate('edit-profile')
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
+  
+  const handleEdit = () => {
+    navigate('/customer/edit-profile')
   }
 
   return (
@@ -28,17 +30,6 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
           className="flex items-center justify-between mb-8"
         >
           <h1 className="text-3xl font-bold text-white">Profile</h1>
-          {userRole === 'shopkeeper' && onOpenSidebar && (
-            <button
-              onClick={onOpenSidebar}
-              variant="ghost"
-              className="lg:hidden text-white hover:bg-slate-800 hover:cursor-pointer"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          )}
         </motion.div>
 
         {/* Profile Header */}
@@ -59,7 +50,7 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handelEdit}
+              onClick={handleEdit}
               className="w-10 h-10 rounded-xl glass border border-orange-500/50 flex items-center justify-center text-orange-500 hover:bg-orange-500/10 transition-colors hover:cursor-pointer"
             >
               <Edit className="w-5 h-5" />
@@ -182,9 +173,9 @@ export function ProfilePage({ onNavigate, userRole, onOpenSidebar }) {
         >
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <button
-              onClick={handelEdit}
+              onClick={handleEdit}
               variant="outline"
-              className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20a rounded-xl flex items-center justify-center hover:cursor-pointer"
+              className="w-full h-12 glass bg-slate-500/10 border-slate-600 text-white hover:bg-slate-500/20 rounded-xl flex items-center justify-center hover:cursor-pointer"
             >
               <User className="w-5 h-5 mr-2" />
               Edit Profile

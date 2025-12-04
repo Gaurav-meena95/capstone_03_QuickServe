@@ -21,33 +21,36 @@ async function generateUniqueSlug(baseName) {
 }
 
 exports.createShopForUser = async (userId, payload) => {
-    if (!payload.name || !payload.category || !payload.address || !payload.city || !payload.pincode) {
-        throw new Error("Missing required fields: name, category, address, city, pincode");
+    // Allow category OR cuisineType, and make city/pincode required
+    if (!payload.name || !(payload.category || payload.cuisineType) || !payload.address || !payload.city || !payload.pincode) {
+        throw new Error("Missing required fields: name, category/cuisineType, address, city, pincode");
     }
-    const exsiting = await prisma.shop.findUnique({ where: { shopkeeperId: userId } });
-    if (exsiting) {
+    const existing = await prisma.shop.findUnique({ where: { shopkeeperId: userId } });
+    if (existing) {
         throw new Error('Shop already exists for this shopkeeper')
     }
     const slug = await generateUniqueSlug(payload.name);
+    const category = payload.category || payload.cuisineType;
+    
     const shop = await prisma.shop.create({
         data: {
             name: payload.name,
             description: payload.description,
             slug,
-            category: payload.category,
+            category,
             image: payload.image || null,
             logo: payload.logo || null,
-            pincode: payload.pincode,
+            pincode: payload.pincode,  // Required, don't allow null
             address: payload.address,
-            city: payload.city,
+            city: payload.city,        // Required, don't allow null
             state: payload.state || null,
             openingTime: payload.openingTime || "09:00",
             closingTime: payload.closingTime || "22:00",
+            status: payload.isOpen === false ? "CLOSED" : "OPEN",  // Fix: check isOpen properly
             shopkeeperId: userId,
         }
     })
     return shop
-
 }
 
 exports.getShopbyUserId = async (userId) => {
@@ -74,3 +77,109 @@ exports.updateShopByUser = async (userId, payload) => {
     })
     return updated
 }
+
+exports.getDashboardForUser = async (userId) => {
+  const shop = await prisma.shop.findUnique({
+    where: { shopkeeperId: userId },
+    include: {
+      menuItems: true,
+      orders: {
+        include: {
+          items: true,
+        },
+        orderBy: { placedAt: "desc" },
+        take: 50, 
+      },
+      reviews: true,
+    },
+  });
+
+  if (!shop) return null;
+
+  const orders = shop.orders || [];
+
+  const stats = {
+    totalOrders: orders.length,
+    pending: orders.filter((o) => o.status === "PENDING").length,
+    confirmed: orders.filter((o) => o.status === "CONFIRMED").length,
+    preparing: orders.filter((o) => o.status === "PREPARING").length,
+    ready: orders.filter((o) => o.status === "READY").length,
+    completed: orders.filter((o) => o.status === "COMPLETED").length,
+    cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+    rating: shop.rating,
+    totalRatings: shop.totalRatings,
+    totalMenuItems: shop.menuItems.length,
+  };
+
+  return {
+    shop: {
+      id: shop.id,
+      name: shop.name,
+      slug: shop.slug,
+      category: shop.category,
+      status: shop.status,
+      rating: shop.rating,
+      totalRatings: shop.totalRatings,
+      city: shop.city,
+      pincode: shop.pincode,
+      openingTime: shop.openingTime,
+      closingTime: shop.closingTime,
+    },
+    menuItems: shop.menuItems,
+    orders,
+    stats,
+  };
+};
+
+// for customer view
+
+exports.getAllOpenShops = async ({ city, category }) => {
+  const where = {
+    status: "OPEN",
+  };
+
+  if (city) where.city = city;
+  if (category) where.category = category;
+
+  const shops = await prisma.shop.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      category: true,
+      rating: true,
+      totalRatings: true,
+      image: true,
+      city: true,
+      pincode: true,
+      status: true,
+    },
+    orderBy: {
+      rating: "desc",
+    },
+  });
+
+  return shops;
+};
+
+exports.getShopWithMenuBySlug = async (slug) => {
+  const shop = await prisma.shop.findUnique({
+    where: { slug },
+    include: {
+      categories: {
+        orderBy: { order: "asc" },
+        include: {
+          menuItems: {
+            where: { available: true },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  if (!shop) return null;
+
+  return shop;
+};

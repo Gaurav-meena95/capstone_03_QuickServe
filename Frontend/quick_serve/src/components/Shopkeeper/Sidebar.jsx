@@ -1,32 +1,38 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, UtensilsCrossed, QrCode, BarChart3, Settings, LogOut, X, Zap } from "lucide-react";
-
+import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
 
 const menuItems = [
-  { id: 'shopkeeper-dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'menu-manager', icon: UtensilsCrossed, label: 'Menu Manager' },
-  { id: 'qr-page', icon: QrCode, label: 'QR Code' },
-  { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/shopkeeper/dashboard' },
+  { id: 'menu-manager', icon: UtensilsCrossed, label: 'Menu Manager', path: '/shopkeeper/menu' },
+  { id: 'qr-page', icon: QrCode, label: 'QR Code', path: '/shopkeeper/qr' },
+  { id: 'analytics', icon: BarChart3, label: 'Analytics', path: '/shopkeeper/analytics' },
+  { id: 'settings', icon: Settings, label: 'Settings', path: '/shopkeeper/settings' },
 ];
 
-export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
+export function ShopkeeperSidebar({ shopData }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [isOpen, setIsOpen] = useState(true)
+
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('userRole')
-    onNavigate('login');
-  };
+    localStorage.removeItem('user')
+    navigate('/login')
+  }
   return (
     <>
       {/* Mobile Overlay */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && window.innerWidth < 1024 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={() => setIsOpen(false)}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           />
         )}
@@ -68,7 +74,7 @@ export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
                   </div>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={() => setIsOpen(false)}
                   className="lg:hidden w-8 h-8 rounded-lg glass flex items-center justify-center hover:bg-slate-800 transition-colors"
                 >
                   <X className="w-5 h-5 text-slate-400" />
@@ -79,18 +85,20 @@ export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
               <div className="glass rounded-xl p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                    <span className="text-xl">🍔</span>
+                    <span className="text-xl">{shopData?.emoji || '🍔'}</span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-white text-sm">Burger Palace</h3>
-                    <p className="text-xs text-slate-400">Fast Food</p>
+                    <h3 className="font-bold text-white text-sm">{shopData?.name || 'Your Shop'}</h3>
+                    <p className="text-xs text-slate-400">{shopData?.cuisineType || shopData?.category || 'Category'}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">Status</span>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-green-400 font-bold">Open</span>
+                    <div className={`w-2 h-2 rounded-full ${shopData?.isOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                    <span className={`${shopData?.isOpen ? 'text-green-400 font-bold' : 'text-red-400'}`}>
+                      {shopData?.isOpen ? 'Open' : 'Closed'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -101,15 +109,15 @@ export function ShopkeeperSidebar({ activePage, onNavigate, isOpen, onClose }) {
               <nav className="space-y-2">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = activePage === item.id;
+                  const isActive = location.pathname === item.path;
 
                   return (
                     <motion.button
                       key={item.id}
                       onClick={() => {
-                        onNavigate(item.id);
+                        navigate(item.path);
                         if (window.innerWidth < 1024) {
-                          onClose();
+                          setIsOpen(false);
                         }
                       }}
                       whileHover={{ x: 5 }}

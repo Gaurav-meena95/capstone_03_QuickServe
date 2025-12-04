@@ -1,8 +1,9 @@
 import { easeInOut, motion } from "framer-motion"
 import { Zap } from "lucide-react"
 import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
 
-export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
+export function LoginPage() {
     const [role, setRole] = useState('CUSTOMER')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
@@ -10,16 +11,12 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
         email: '',
         password: ''
     })
-    const loginAsShopkeeper = () => {
-        setRole('SHOPKEEPER')
-
-    }
-    const loginAsCustomer = () => {
-        setRole('CUSTOMER')
-    }
+    const navigate = useNavigate()
+    
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
@@ -32,20 +29,23 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                 body: JSON.stringify({ ...form, role })
             })
             const loginUser = await res.json()
-            if (!res.ok) throw new Error(loginUser.message || 'Login Faild')
+            if (!res.ok) throw new Error(loginUser.message || 'Login Failed')
 
-            // Store tokens in localStorage
             if (loginUser.token) {
                 localStorage.setItem('accessToken', loginUser.token)
             }
             if (loginUser.refreshToken) {
                 localStorage.setItem('refreshToken', loginUser.refreshToken)
             }
-
-            console.log(loginUser)
-            alert(loginUser.message || 'Login Successful')
-            onLogin && onLogin(role)
-            onNavigate && onNavigate(role === 'SHOPKEEPER' ? 'shopkeeper-dashboard' : 'customer-home')
+            localStorage.setItem('userRole', role)
+            
+            // Navigate based on role - ShopCheck will handle shop verification
+            if (role === 'CUSTOMER') {
+                navigate('/customer/home')
+            } else {
+                // For shopkeeper, go to dashboard - ShopCheck will redirect to create if no shop
+                navigate('/shopkeeper/dashboard')
+            }
         } catch (error) {
             console.log(error)
             setError(error.message)
@@ -53,8 +53,8 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
         finally {
             setLoading(false)
         }
-
     }
+
     return (
         <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden relative gradient-bg">
             {/* animate circle  */}
@@ -69,7 +69,6 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                     repeat: Infinity,
                     ease: easeInOut
                 }}
-
             />
             <motion.div
                 className="absolute h-72 w-72 bottom-20 right-10 bg-green-600/20 rounded-full blur-3xl"
@@ -120,7 +119,7 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                 </motion.div>
                 <motion.div
                     className="glass rounded-2xl p-8 glow-orange"
-                    initial={{ opacit: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
@@ -153,8 +152,12 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                         <div className="space-y-3">
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <button
-                                    onClick={loginAsCustomer}
-                                    type="submit"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        setRole('CUSTOMER')
+                                        handleSubmit(e)
+                                    }}
+                                    type="button"
                                     disabled={loading}
                                     className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
                                     {loading ? "Logging in..." : "Login as Customer"}
@@ -162,33 +165,36 @@ export function LoginPage({ onLogin, onNavigateToSignup, onNavigate }) {
                             </motion.div>
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <button
-                                    onClick={loginAsShopkeeper}
-                                    type="submit"
+                                    onClick={(e) => {
+                                        e.preventDefault()
+                                        setRole('SHOPKEEPER')
+                                        handleSubmit(e)
+                                    }}
+                                    type="button"
+                                    disabled={loading}
                                     className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
                                     {loading ? "Logging in..." : 'Login as Shopkeeper'}
                                 </button>
-
                             </motion.div>
-
                         </div>
                     </form>
                     <div className="text-center mt-6">
-                        <button
-                            onClick={() => onNavigate && onNavigate('forgot-password')}
+                        <Link
+                            to="/forgot-password"
                             className="text-sm text-slate-400 hover:text-orange-500 transition-colors hover:cursor-pointer"
                         >
                             Forgot password?
-                        </button>
+                        </Link>
                     </div>
                 </motion.div >
                 <p className="text-center text-slate-500 text-sm mt-6">
                     Don't have an account?{" "}
-                    <button
-                        onClick={onNavigateToSignup}
+                    <Link
+                        to="/signup"
                         className="text-orange-500 hover:text-orange-300 transition-colors hover:cursor-pointer"
                     >
                         Sign up
-                    </button>
+                    </Link>
                 </p>
             </motion.div >
         </div >

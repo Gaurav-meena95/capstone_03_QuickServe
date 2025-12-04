@@ -2,9 +2,9 @@ import { easeInOut } from "framer-motion";
 import { Lock, Mail, Phone, User, Zap } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion"
+import { Link, useNavigate } from "react-router-dom"
 
-
-export function SignupPage({ onSignup, onNavigateToLogin }) {
+export function SignupPage() {
     const [role, setRole] = useState('CUSTOMER');
     const [form, setForm] = useState({
         name: '',
@@ -14,6 +14,7 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
         confirmPassword: ''
     });
 
+    const navigate = useNavigate()
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -21,37 +22,45 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        
+        // Validate password match
         if (form.password !== form.confirmPassword) {
-            setError('Password not match')
+            setError('Passwords do not match')
             return
         }
+        
         setLoading(true)
         try {
             const res = await fetch(`${backend}/api/auth/signup`, {
                 method: 'POST',
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": 'application/json' },
                 body: JSON.stringify({ ...form, role })
             })
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Signup failed")
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.message || 'Signup failed')
 
-            if (data.token) {
-                localStorage.setItem('accessToken', data.token)
-            }
-            if (data.refreshToken) {
-                localStorage.setItem('refreshToken', data.refreshToken)
+            // Store tokens and user data
+            if (data.token) localStorage.setItem('accessToken', data.token)
+            if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken)
+            if (data.user) localStorage.setItem('user', JSON.stringify(data.user))
+            localStorage.setItem('userRole', role)
+
+            // Navigate based on role
+            if (role === 'CUSTOMER') {
+                navigate('/customer/home')
+            } else {
+                // Shopkeeper goes directly to shop creation form
+                navigate('/shopkeeper/shop/create')
             }
 
-            alert("Account created successfully!");
-            onSignup && onSignup(role,true);
-        } catch (error) {
-            console.log(error)
-            setError(error.message)
-        }
-        finally {
+        } catch (err) {
+            console.error(err)
+            setError(err.message)
+        } finally {
             setLoading(false)
         }
     }
@@ -238,12 +247,12 @@ export function SignupPage({ onSignup, onNavigateToLogin }) {
                 </motion.div >
                 <p className="text-center text-slate-500 text-sm mt-6">
                     Already have an account?{" "}
-                    <button
-                        onClick={onNavigateToLogin}
+                    <Link
+                        to="/login"
                         className="text-orange-500 hover:text-orange-300 transition-colors hover:cursor-pointer"
                     >
                         Log in
-                    </button>
+                    </Link>
                 </p>
             </motion.div >
         </div>

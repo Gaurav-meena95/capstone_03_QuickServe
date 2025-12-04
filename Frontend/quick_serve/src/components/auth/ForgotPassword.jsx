@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion"
+import { useNavigate, Link } from "react-router-dom"
 
-export function ForgotPasswordPage({ onNavigate }) {
+export function ForgotPasswordPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -118,12 +120,12 @@ export function ForgotPasswordPage({ onNavigate }) {
           </form>
 
           <div className="text-center mt-6">
-            <button
-              onClick={() => onNavigate('login')}
+            <Link
+              to="/login"
               className="text-sm text-slate-400 hover:text-orange-500 transition-colors hover:cursor-pointer"
             >
               Back to Login
-            </button>
+            </Link>
           </div>
         </motion.div>
       </motion.div>

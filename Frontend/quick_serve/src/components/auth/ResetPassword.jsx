@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion"
+import { useNavigate, Link } from "react-router-dom"
 
-
-export function ResetPasswordPage({ onNavigate }) {
+export function ResetPasswordPage() {
+  const navigate = useNavigate()
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -46,7 +47,7 @@ export function ResetPasswordPage({ onNavigate }) {
 
             setMessage('Password has been reset successfully! Redirecting to login...');
             setTimeout(() => {
-                onNavigate('login');
+                navigate('/login');
             }, 2000);
         } catch (error) {
             console.error(error);
@@ -66,12 +67,12 @@ export function ResetPasswordPage({ onNavigate }) {
                 >
                     <h2 className="text-2xl font-bold text-white mb-4">Invalid Reset Link</h2>
                     <p className="text-slate-400 mb-6">This password reset link is invalid or has expired.</p>
-                    <button
-                        onClick={() => onNavigate('login')}
+                    <Link
+                        to="/login"
                         className="text-orange-500 hover:text-orange-400 transition-colors"
                     >
                         Back to Login
-                    </button>
+                    </Link>
                 </motion.div>
             </div>
         );
@@ -168,12 +169,12 @@ export function ResetPasswordPage({ onNavigate }) {
                     </form>
 
                     <div className="text-center mt-6">
-                        <button
-                            onClick={() => onNavigate('login')}
+                        <Link
+                            to="/login"
                             className="text-sm text-slate-400 hover:text-orange-500 transition-colors hover:cursor-pointer"
                         >
                             Back to Login
-                        </button>
+                        </Link>
                     </div>
                 </motion.div>
             </motion.div>

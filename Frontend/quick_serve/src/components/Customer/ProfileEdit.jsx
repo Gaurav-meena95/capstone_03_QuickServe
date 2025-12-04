@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, User, Mail, Phone, MapPin } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
 import { Button } from '../../assets/ui/button'
-
 import { Label } from "../../assets/ui/label";
+import { useNavigate } from 'react-router-dom'
 
-
-export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
-    // const fin
+export function EditProfilePage() {
+    const navigate = useNavigate()
+    const userRole = localStorage.getItem('userRole')?.toLowerCase() || 'customer'
+    
     const [editProfile, setEditProfile] = useState({
         name: "Gaurav Meena",
         email: "gaurav.meena2024@gmail.com",
@@ -17,7 +18,7 @@ export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
         avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200",
     });
 
-    const handleCancel = () => onNavigate("profile");
+    const handleCancel = () => navigate("/customer/profile");
     const handleSave = () => {
         console.log(editProfile)
     };
@@ -35,20 +36,12 @@ export function EditProfilePage({ onNavigate, userRole, onOpenSidebar }) {
                         <Button
                             variant="ghost"
                             className="text-white hover:bg-slate-800 hover:cursor-pointer"
-                            onClick={() => onNavigate("profile")}
+                            onClick={() => navigate("/customer/profile")}
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
                         <h1 className="text-3xl font-bold text-white">Edit Profile</h1>
                     </div>
-
-                    {userRole === "shopkeeper" && onOpenSidebar && (
-                        <Button onClick={onOpenSidebar} variant="ghost" className="lg:hidden text-white hover:bg-slate-800 hover:cursor-pointer">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </Button>
-                    )}
                 </motion.div>
 
                 {/* Preview + Form Card */}
