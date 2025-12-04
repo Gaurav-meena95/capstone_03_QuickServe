@@ -10,7 +10,7 @@ import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
 import { ShopkeeperSidebar } from './components/Shopkeeper/Sidebar'
 import { ShopForm } from './components/Shopkeeper/ShopForm'
 import { ProtectedRoute } from './components/ProtectedRoute'
-import { ShopCheck } from './components/ShopCheck'
+import { ShopCheck } from './components/Shopkeeper/ShopCheck'
 import { ForgotPasswordPage } from './components/auth/ForgotPassword'
 import { ResetPasswordPage } from './components/auth/ResetPassword'
 
@@ -25,13 +25,11 @@ function App() {
   const [showSplash, setShowsplash] = useState(true)
   const [shopData, setShopData] = useState(null)
 
-  // Check for existing shop data on mount if shopkeeper is logged in
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
     const role = localStorage.getItem('userRole')
     
     if (token && role === 'SHOPKEEPER') {
-      // Try to load shop data if available
       const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL
       const refreshToken = localStorage.getItem('refreshToken')
       

@@ -15,13 +15,16 @@ export function ShopkeeperSidebar({ shopData }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(true)
-
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('userRole')
     localStorage.removeItem('user')
     navigate('/login')
+  }
+
+  const updateShop = ()=>{
+    // update shop api call
   }
   return (
     <>
@@ -83,7 +86,7 @@ export function ShopkeeperSidebar({ shopData }) {
 
               {/* Shop Info */}
               <div className="glass rounded-xl p-4">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-3 ">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
                     <span className="text-xl">{shopData?.emoji || '🍔'}</span>
                   </div>
@@ -101,6 +104,14 @@ export function ShopkeeperSidebar({ shopData }) {
                     </span>
                   </div>
                 </div>
+                {
+                  
+                  shopData ? <div onClick = {updateShop} className="flex justify-center items-center w-full  gap-3 my-4 py-2 rounded-xl bg-slate-800   hover:text-orange-500 text-slate-300 hover:bg-slate-700  hover:cursor-pointer">
+                  Update shop
+                </div> : ''
+                
+                }
+                
               </div>
             </div>
 
@@ -122,11 +133,10 @@ export function ShopkeeperSidebar({ shopData }) {
                       }}
                       whileHover={{ x: 5 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${
-                        isActive
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${isActive
                           ? 'glass border-orange-500/50 text-orange-500'
                           : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      }`}
+                        }`}
                     >
                       {isActive && (
                         <motion.div

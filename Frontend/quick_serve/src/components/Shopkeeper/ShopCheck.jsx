@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useShopData } from '../App'
+import { useShopData } from '../../App'
 
 export function ShopCheck({ children, onShopData }) {
   const [loading, setLoading] = useState(true)
@@ -56,22 +56,17 @@ export function ShopCheck({ children, onShopData }) {
         }
         // Update context
         setShopData(normalizedShop)
-        // Also call callback if provided (for backward compatibility)
         if (onShopData) onShopData(normalizedShop)
       } else if (response.status === 404) {
-        // Shop doesn't exist, redirect to create form
         navigate('/shopkeeper/shop/create')
       } else if (response.status === 401 || response.status === 403) {
-        // Token invalid, logout
         localStorage.clear()
         navigate('/login')
       } else {
-        // Other errors, try to create shop
         navigate('/shopkeeper/shop/create')
       }
     } catch (error) {
       console.error('Error checking shop:', error)
-      // On network error, don't logout - just redirect to create
       navigate('/shopkeeper/shop/create')
     } finally {
       setLoading(false)
