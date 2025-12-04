@@ -5,6 +5,6 @@ const controller = require('./controller')
 
 shopRouter.post('/',verifymiddleware ,controller.createShop)
 shopRouter.get('/me',verifymiddleware,controller.getMyShop)
-shopRouter.put('/me',verifymiddleware,controller.updateMyShop)
+shopRouter.patch('/me',verifymiddleware,controller.updateMyShop)
 
 module.exports = shopRouter

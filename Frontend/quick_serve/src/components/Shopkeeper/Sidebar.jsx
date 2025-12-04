@@ -5,8 +5,8 @@ import { useState } from "react";
 
 const menuItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/shopkeeper/dashboard' },
-  { id: 'menu-manager', icon: UtensilsCrossed, label: 'Menu Manager', path: '/shopkeeper/menu' },
-  { id: 'qr-page', icon: QrCode, label: 'QR Code', path: '/shopkeeper/qr' },
+  { id: 'menu-manager', icon: UtensilsCrossed, label: 'Menu Manager', path: '/shopkeeper/menu-manager' },
+  { id: 'qr-page', icon: QrCode, label: 'QR Code', path: '/shopkeeper/qr-page' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics', path: '/shopkeeper/analytics' },
   { id: 'settings', icon: Settings, label: 'Settings', path: '/shopkeeper/settings' },
 ];
@@ -15,6 +15,7 @@ export function ShopkeeperSidebar({ shopData }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(true)
+  const [activeMenu, setActiveMenu] = useState('dashboard')
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -23,8 +24,8 @@ export function ShopkeeperSidebar({ shopData }) {
     navigate('/login')
   }
 
-  const updateShop = ()=>{
-    // update shop api call
+  const updateShop = () => {
+    navigate('/shopkeeper/shop/edit');
   }
   return (
     <>
@@ -120,12 +121,14 @@ export function ShopkeeperSidebar({ shopData }) {
               <nav className="space-y-2">
                 {menuItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
+                  // Check both URL path and local state for active status
+                  const isActive = activeMenu === item.id || location.pathname === item.path || location.pathname.startsWith(item.path + '/');
 
                   return (
                     <motion.button
                       key={item.id}
                       onClick={() => {
+                        setActiveMenu(item.id);
                         navigate(item.path);
                         if (window.innerWidth < 1024) {
                           setIsOpen(false);
@@ -133,22 +136,23 @@ export function ShopkeeperSidebar({ shopData }) {
                       }}
                       whileHover={{ x: 5 }}
                       whileTap={{ scale: 0.98 }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative ${isActive
-                          ? 'glass border-orange-500/50 text-orange-500'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                        }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative hover:cursor-pointer ${
+                        isActive
+                          ? 'glass border border-orange-500/50 text-orange-500 glow-orange shadow-lg shadow-orange-500/20'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+                      }`}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="sidebar-indicator"
                           className="absolute inset-0 rounded-xl glow-orange"
                           style={{
-                            background: "rgba(249, 115, 22, 0.1)",
+                            background: "rgba(249, 115, 22, 0.15)",
                           }}
                         />
                       )}
-                      <Icon className={`w-5 h-5 relative z-10 ${isActive ? 'text-orange-500' : ''}`} />
-                      <span className={`relative z-10 ${isActive ? 'font-bold' : ''}`}>
+                      <Icon className={`w-5 h-5 relative z-10 transition-colors ${isActive ? 'text-orange-500 drop-shadow-lg drop-shadow-orange-500' : ''}`} />
+                      <span className={`relative z-10 transition-all ${isActive ? 'font-bold text-orange-500' : ''}`}>
                         {item.label}
                       </span>
                     </motion.button>

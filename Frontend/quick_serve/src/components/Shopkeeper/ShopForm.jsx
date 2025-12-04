@@ -134,7 +134,7 @@ export function ShopForm({ shopData, isEditing = false }) {
         ? `${backend}/api/shops/me`
         : `${backend}/api/shops`;
 
-      const method = isEditing ? 'PUT' : 'POST';
+      const method = isEditing ? 'PATCH' : 'POST';
 
       const headers = {
         'Authorization': `JWT ${token}`,

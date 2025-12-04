@@ -1,3 +1,4 @@
+
 const prisma = require('../../config/prismaClient')
 
 function slugify(name) {
@@ -68,12 +69,32 @@ exports.getShopbyUserId = async (userId) => {
 }
 
 exports.updateShopByUser = async (userId, payload) => {
-    if (payload.name) {
-        payload.slug = await generateUniqueSlug(payload.name);
+    const updateData = { ...payload };
+    
+    // Generate new slug if name is being updated
+    if (updateData.name) {
+        updateData.slug = await generateUniqueSlug(updateData.name);
     }
+    
+    // Map cuisineType to category if provided
+    if (updateData.cuisineType) {
+        updateData.category = updateData.cuisineType;
+        delete updateData.cuisineType;
+    }
+    
+    // Convert isOpen boolean to status enum
+    if (updateData.isOpen !== undefined) {
+        updateData.status = updateData.isOpen ? "OPEN" : "CLOSED";
+        delete updateData.isOpen;
+    }
+    
+    // Remove fields that don't exist in Shop schema
+    const invalidFields = ['phone', 'email', 'website', 'deliveryFee', 'minOrderAmount'];
+    invalidFields.forEach(field => delete updateData[field]);
+    
     const updated = await prisma.shop.update({
         where: { shopkeeperId: userId },
-        data:payload
+        data: updateData
     })
     return updated
 }

@@ -9,6 +9,8 @@ import { EditProfilePage } from './components/Customer/ProfileEdit'
 import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
 import { ShopkeeperSidebar } from './components/Shopkeeper/Sidebar'
 import { ShopForm } from './components/Shopkeeper/ShopForm'
+import { MenuManager } from './components/Shopkeeper/MenuManager'
+import { QRPage } from './components/Shopkeeper/QRPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ShopCheck } from './components/Shopkeeper/ShopCheck'
 import { ForgotPasswordPage } from './components/auth/ForgotPassword'
@@ -138,8 +140,20 @@ function ShopkeeperLayout() {
             }
           />
           <Route
+            path="menu-manager"
+            element={<MenuManager />}
+          />
+          <Route
+            path="qr-page"
+            element={<QRPage />}
+          />
+          <Route
             path="shop/create"
             element={<ShopForm shopData={null} isEditing={false} />}
+          />
+          <Route
+            path="shop/edit"
+            element={<ShopForm shopData={shopData} isEditing={true} />}
           />
           <Route path="*" element={<Navigate to="/shopkeeper/dashboard" replace />} />
         </Routes>
