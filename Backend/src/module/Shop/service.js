@@ -54,6 +54,26 @@ exports.createShopForUser = async (userId, payload) => {
     return shop
 }
 
+// Helper function to check if shop is within operating hours
+function isWithinOperatingHours(openingTime, closingTime) {
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+    
+    // Parse opening and closing times (format: "HH:MM")
+    const [openHour, openMin] = openingTime.split(':').map(Number);
+    const [closeHour, closeMin] = closingTime.split(':').map(Number);
+    
+    const openingMinutes = openHour * 60 + openMin;
+    const closingMinutes = closeHour * 60 + closeMin;
+    
+    // Handle case where closing time is past midnight
+    if (closingMinutes < openingMinutes) {
+        return currentTime >= openingMinutes || currentTime <= closingMinutes;
+    }
+    
+    return currentTime >= openingMinutes && currentTime <= closingMinutes;
+}
+
 exports.getShopbyUserId = async (userId) => {
     const shop = await prisma.shop.findUnique({
         where: {
@@ -64,6 +84,22 @@ exports.getShopbyUserId = async (userId) => {
             // }
         }
     })
+    
+    if (shop) {
+        // Auto-update status based on operating hours
+        const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
+        const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+        
+        // Update status if it doesn't match
+        if (shop.status !== newStatus) {
+            await prisma.shop.update({
+                where: { id: shop.id },
+                data: { status: newStatus }
+            });
+            shop.status = newStatus;
+        }
+    }
+    
     return shop
 
 }
@@ -125,6 +161,18 @@ exports.getDashboardForUser = async (userId) => {
 
   if (!shop) return null;
 
+  // Auto-update status based on operating hours
+  const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
+  const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+  
+  if (shop.status !== newStatus) {
+    await prisma.shop.update({
+      where: { id: shop.id },
+      data: { status: newStatus }
+    });
+    shop.status = newStatus;
+  }
+
   const orders = shop.orders || [];
 
   const stats = {
@@ -163,9 +211,7 @@ exports.getDashboardForUser = async (userId) => {
 // for customer view
 
 exports.getAllOpenShops = async ({ city, category }) => {
-  const where = {
-    status: "OPEN",
-  };
+  const where = {};
 
   if (city) where.city = city;
   if (category) where.category = category;
@@ -183,13 +229,39 @@ exports.getAllOpenShops = async ({ city, category }) => {
       city: true,
       pincode: true,
       status: true,
+      openingTime: true,
+      closingTime: true,
     },
     orderBy: {
       rating: "desc",
     },
   });
 
-  return shops;
+  // Update status based on operating hours and filter only open shops
+  const openShops = [];
+  
+  for (const shop of shops) {
+    const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
+    const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+    
+    // Update status if needed
+    if (shop.status !== newStatus) {
+      await prisma.shop.update({
+        where: { id: shop.id },
+        data: { status: newStatus }
+      });
+      shop.status = newStatus;
+    }
+    
+    // Only include open shops
+    if (shop.status === 'OPEN') {
+      // Remove openingTime and closingTime from response
+      const { openingTime, closingTime, ...shopData } = shop;
+      openShops.push(shopData);
+    }
+  }
+
+  return openShops;
 };
 
 exports.getShopWithMenuBySlug = async (slug) => {
@@ -209,6 +281,18 @@ exports.getShopWithMenuBySlug = async (slug) => {
   });
 
   if (!shop) return null;
+
+  // Auto-update status based on operating hours
+  const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
+  const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+  
+  if (shop.status !== newStatus) {
+    await prisma.shop.update({
+      where: { id: shop.id },
+      data: { status: newStatus }
+    });
+    shop.status = newStatus;
+  }
 
   return shop;
 };
@@ -258,6 +342,20 @@ exports.updateOrderStatus = async (userId, orderId, status) => {
       },
     },
   });
+
+  // Create notification for status change
+  const notificationService = require('../Notification/service');
+  const notificationTypes = {
+    'CONFIRMED': 'ORDER_CONFIRMED',
+    'PREPARING': 'ORDER_PREPARING',
+    'READY': 'ORDER_READY',
+    'COMPLETED': 'ORDER_COMPLETED',
+    'CANCELLED': 'ORDER_CANCELLED'
+  };
+  
+  if (notificationTypes[status]) {
+    await notificationService.createOrderNotification(updatedOrder, notificationTypes[status]);
+  }
 
   return updatedOrder;
 };

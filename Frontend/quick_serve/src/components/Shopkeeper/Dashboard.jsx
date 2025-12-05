@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Bell, Clock, Users, TrendingUp, DollarSign } from "lucide-react";
+import { Clock, Users, DollarSign } from "lucide-react";
 import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
+import { NotificationPanel } from '../NotificationPanel';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -144,17 +145,25 @@ export function ShopkeeperDashboard() {
           <div className="flex items-center gap-4">
             <div>
               <h1 className="font-bold text-white text-xl">Dashboard</h1>
-              <p className="text-xs text-slate-400">{shop.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-400">{shop.name}</p>
+                <span className="text-slate-600">•</span>
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                  shop.status === 'OPEN' ? 'bg-green-500/20' : 'bg-red-500/20'
+                }`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    shop.status === 'OPEN' ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  <span className={`text-xs font-semibold ${
+                    shop.status === 'OPEN' ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {shop.status === 'OPEN' ? 'Open' : 'Closed'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 rounded-xl glass flex items-center justify-center relative"
-          >
-            <Bell className="w-5 h-5 text-white" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full" />
-          </motion.button>
+          <NotificationPanel />
         </div>
       </div>
 

@@ -13,7 +13,20 @@ export function SettingsPage() {
     category: '',
     address: '',
     openingTime: '09:00',
-    closingTime: '22:00',
+    closingTime: '20:24',
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    newOrderAlerts: true,
+    orderReadyReminders: true,
+    customerReviews: false,
+    dailySummary: true
+  });
+
+  const [paymentMethods, setPaymentMethods] = useState({
+    card: true,
+    cash: true,
+    digitalWallet: false
   });
 
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -27,10 +40,29 @@ export function SettingsPage() {
         category: shopData.category || shopData.cuisineType || '',
         address: shopData.address || '',
         openingTime: shopData.openingTime || '09:00',
-        closingTime: shopData.closingTime || '22:00',
+        closingTime: shopData.closingTime || '20:24',
       });
     }
   }, [shopData]);
+
+  // Check if shop is currently open based on time
+  const isCurrentlyOpen = () => {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    const [openHour, openMin] = formData.openingTime.split(':').map(Number);
+    const [closeHour, closeMin] = formData.closingTime.split(':').map(Number);
+    
+    const openingMinutes = openHour * 60 + openMin;
+    const closingMinutes = closeHour * 60 + closeMin;
+    
+    // Handle case where closing time is past midnight
+    if (closingMinutes < openingMinutes) {
+      return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
+    }
+    
+    return currentMinutes >= openingMinutes && currentMinutes <= closingMinutes;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -208,13 +240,23 @@ export function SettingsPage() {
           transition={{ delay: 0.2 }}
           className="glass rounded-2xl p-6 mb-6"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-green-500" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Operating Hours</h3>
+                <p className="text-sm text-slate-400">Set your business hours</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Operating Hours</h3>
-              <p className="text-sm text-slate-400">Set your business hours</p>
+            <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+              isCurrentlyOpen() ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${isCurrentlyOpen() ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className={`text-sm font-semibold ${isCurrentlyOpen() ? 'text-green-400' : 'text-red-400'}`}>
+                {isCurrentlyOpen() ? 'Currently Open' : 'Currently Closed'}
+              </span>
             </div>
           </div>
 
@@ -241,6 +283,11 @@ export function SettingsPage() {
                 </div>
               </div>
             </div>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+              <p className="text-sm text-blue-300">
+                <span className="font-semibold">ℹ️ Auto Status:</span> Your shop status will automatically change to "Open" during these hours and "Closed" outside these hours.
+              </p>
+            </div>
           </div>
         </motion.div>
 
@@ -263,10 +310,10 @@ export function SettingsPage() {
 
           <div className="space-y-4">
             {[
-              { label: 'New Order Alerts', desc: 'Get notified for new orders', checked: true },
-              { label: 'Order Ready Reminders', desc: 'Remind when orders are ready', checked: true },
-              { label: 'Customer Reviews', desc: 'Get notified of new reviews', checked: false },
-              { label: 'Daily Summary', desc: 'Receive daily sales report', checked: true }
+              { key: 'newOrderAlerts', label: 'New Order Alerts', desc: 'Get notified for new orders' },
+              { key: 'orderReadyReminders', label: 'Order Ready Reminders', desc: 'Remind when orders are ready' },
+              { key: 'customerReviews', label: 'Customer Reviews', desc: 'Get notified of new reviews' },
+              { key: 'dailySummary', label: 'Daily Summary', desc: 'Receive daily sales report' }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div>
@@ -274,13 +321,17 @@ export function SettingsPage() {
                   <p className="text-xs text-slate-400">{item.desc}</p>
                 </div>
                 <motion.button
+                  onClick={() => setNotificationSettings(prev => ({
+                    ...prev,
+                    [item.key]: !prev[item.key]
+                  }))}
                   className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-                    item.checked ? 'bg-green-500' : 'bg-slate-600'
+                    notificationSettings[item.key] ? 'bg-green-500' : 'bg-slate-600'
                   }`}
                 >
                   <motion.div
                     className="bg-white w-6 h-6 rounded-full shadow-lg"
-                    animate={{ x: item.checked ? 24 : 0 }}
+                    animate={{ x: notificationSettings[item.key] ? 24 : 0 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 </motion.button>
@@ -308,9 +359,9 @@ export function SettingsPage() {
 
           <div className="space-y-3">
             {[
-              { icon: '💳', label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex', checked: true },
-              { icon: '💵', label: 'Cash on Delivery', desc: 'Pay when you collect', checked: true },
-              { icon: '📱', label: 'Digital Wallets', desc: 'Apple Pay, Google Pay', checked: false }
+              { key: 'card', icon: '💳', label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex' },
+              { key: 'cash', icon: '💵', label: 'Cash on Delivery', desc: 'Pay when you collect' },
+              { key: 'digitalWallet', icon: '📱', label: 'Digital Wallets', desc: 'UPI, PhonePe, GPay' }
             ].map((payment, index) => (
               <div key={index} className="flex items-center justify-between glass rounded-xl p-4">
                 <div className="flex items-center gap-3">
@@ -323,13 +374,17 @@ export function SettingsPage() {
                   </div>
                 </div>
                 <motion.button
+                  onClick={() => setPaymentMethods(prev => ({
+                    ...prev,
+                    [payment.key]: !prev[payment.key]
+                  }))}
                   className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-                    payment.checked ? 'bg-green-500' : 'bg-slate-600'
+                    paymentMethods[payment.key] ? 'bg-green-500' : 'bg-slate-600'
                   }`}
                 >
                   <motion.div
                     className="bg-white w-6 h-6 rounded-full shadow-lg"
-                    animate={{ x: payment.checked ? 24 : 0 }}
+                    animate={{ x: paymentMethods[payment.key] ? 24 : 0 }}
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 </motion.button>

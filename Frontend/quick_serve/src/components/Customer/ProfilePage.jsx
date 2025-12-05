@@ -13,16 +13,19 @@ export function ProfilePage() {
   const userRole = localStorage.getItem('userRole')?.toLowerCase() || 'customer'
   
   const [profile, setProfile] = useState(null)
+  const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await fetchWithAuth(`${API_BASE_URL}/api/profile`)
         
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
+        // Fetch profile
+        const profileResponse = await fetchWithAuth(`${API_BASE_URL}/api/profile`)
+        
+        if (!profileResponse.ok) {
+          if (profileResponse.status === 401 || profileResponse.status === 403) {
             localStorage.clear()
             navigate('/login')
             return
@@ -30,16 +33,24 @@ export function ProfilePage() {
           throw new Error('Failed to fetch profile')
         }
         
-        const data = await response.json()
-        setProfile(data.user)
+        const profileData = await profileResponse.json()
+        setProfile(profileData.user)
+        
+        // Fetch stats
+        const statsResponse = await fetchWithAuth(`${API_BASE_URL}/api/profile/stats`)
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          setStats(statsData.stats)
+        }
       } catch (err) {
-        console.error('Error fetching profile:', err)
+        console.error('Error fetching data:', err)
       } finally {
         setLoading(false)
       }
     }
     
-    fetchProfile()
+    fetchData()
   }, [navigate])
   
   const handleLogout = () => {
@@ -127,23 +138,27 @@ export function ProfilePage() {
           <div className="grid grid-cols-3 gap-4 border border-slate-700 p-6 rounded-2xl">
             <div className="text-center rounded-b-full glow-white p-3">
               <div className="text-xl font-bold text-white mb-1 lg:text-3xl ">
-                {userRole === 'customer' ? '24' : '156'}
+                {stats ? stats.totalOrders : '0'}
               </div>
               <div className="text-xs text-slate-400">
-                {userRole === 'customer' ? 'Orders' : 'Total Orders'}
+                {profile?.role === 'SHOPKEEPER' ? 'Total Orders' : 'Orders'}
               </div>
             </div>
             <div className="text-center rounded-b-full glow-green p-3">
               <div className="text-xl font-bold text-green-400 mb-1 lg:text-3xl">
-                {userRole === 'customer' ? '4.8' : '4.9'}
+                {stats ? (profile?.role === 'SHOPKEEPER' ? stats.rating.toFixed(1) : stats.avgRating.toFixed(1)) : '0.0'}
               </div>
-              <div className="text-xs text-slate-400">Rating</div>
+              <div className="text-xs text-slate-400">
+                {profile?.role === 'SHOPKEEPER' ? 'Shop Rating' : 'Avg Rating'}
+              </div>
             </div>
             <div className="text-center rounded-b-full glow-orange p-3">
               <div className="text-xl font-bold text-orange-400 mb-1 lg:text-3xl">
-                {userRole === 'customer' ? '$240' : '$4,250'}
+                ₹{stats ? (profile?.role === 'SHOPKEEPER' ? stats.totalRevenue.toFixed(0) : stats.totalSpent.toFixed(0)) : '0'}
               </div>
-              <div className="text-xs text-slate-400">Total Spent</div>
+              <div className="text-xs text-slate-400">
+                {profile?.role === 'SHOPKEEPER' ? 'Total Revenue' : 'Total Spent'}
+              </div>
             </div>
           </div>
         </motion.div>

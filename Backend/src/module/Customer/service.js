@@ -140,6 +140,10 @@ exports.createOrder = async (userId, orderData) => {
     },
   });
 
+  // Create notification for new order
+  const notificationService = require('../Notification/service');
+  await notificationService.createOrderNotification(order, 'ORDER_PLACED');
+
   return order;
 };
 
