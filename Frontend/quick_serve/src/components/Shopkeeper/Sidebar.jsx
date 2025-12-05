@@ -23,10 +23,6 @@ export function ShopkeeperSidebar({ shopData }) {
     localStorage.removeItem('user')
     navigate('/login')
   }
-
-  const updateShop = () => {
-    navigate('/shopkeeper/shop/edit');
-  }
   return (
     <>
       {/* Mobile Overlay */}
@@ -105,14 +101,6 @@ export function ShopkeeperSidebar({ shopData }) {
                     </span>
                   </div>
                 </div>
-                {
-                  
-                  shopData ? <div onClick = {updateShop} className="flex justify-center items-center w-full  gap-3 my-4 py-2 rounded-xl bg-slate-800   hover:text-orange-500 text-slate-300 hover:bg-slate-700  hover:cursor-pointer">
-                  Update shop
-                </div> : ''
-                
-                }
-                
               </div>
             </div>
 

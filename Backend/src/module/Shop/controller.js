@@ -81,7 +81,7 @@ exports.listShops = async (req, res) => {
 exports.getShopPublic = async (req, res) => {
   try {
     const { slug } = req.params;
-    const shop = await shopService.getShopWithMenuBySlug(slug);
+    const shop = await service.getShopWithMenuBySlug(slug);
     if (!shop) {
       return res.status(404).json({ success: false, message: "Shop not found" });
     }
@@ -89,5 +89,17 @@ exports.getShopPublic = async (req, res) => {
   } catch (err) {
     console.error("getShopPublic error:", err);
     res.status(500).json({ success: false, message: "Failed to fetch shop" });
+  }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const order = await service.updateOrderStatus(req.user.id, orderId, status);
+    res.json({ success: true, message: 'Order status updated', order });
+  } catch (err) {
+    console.error("updateOrderStatus error:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 };

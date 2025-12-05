@@ -103,10 +103,18 @@ exports.getDashboardForUser = async (userId) => {
   const shop = await prisma.shop.findUnique({
     where: { shopkeeperId: userId },
     include: {
-      menuItems: true,
+      menuItems: {
+        include: {
+          category: true,
+        },
+      },
       orders: {
         include: {
-          items: true,
+          items: {
+            include: {
+              menuItem: true,
+            },
+          },
         },
         orderBy: { placedAt: "desc" },
         take: 50, 
@@ -203,4 +211,53 @@ exports.getShopWithMenuBySlug = async (slug) => {
   if (!shop) return null;
 
   return shop;
+};
+
+exports.updateOrderStatus = async (userId, orderId, status) => {
+  // Verify shop ownership
+  const shop = await prisma.shop.findUnique({
+    where: { shopkeeperId: userId },
+  });
+
+  if (!shop) throw new Error('Shop not found');
+
+  // Verify order belongs to this shop
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      shopId: shop.id,
+    },
+  });
+
+  if (!order) throw new Error('Order not found');
+
+  // Update order status with timestamps
+  const updateData = { status };
+  
+  if (status === 'CONFIRMED') updateData.confirmedAt = new Date();
+  if (status === 'PREPARING') updateData.preparingAt = new Date();
+  if (status === 'READY') updateData.readyAt = new Date();
+  if (status === 'COMPLETED') updateData.completedAt = new Date();
+  if (status === 'CANCELLED') updateData.cancelledAt = new Date();
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: updateData,
+    include: {
+      items: {
+        include: {
+          menuItem: true,
+        },
+      },
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return updatedOrder;
 };

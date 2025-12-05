@@ -6,6 +6,12 @@ import { SplashScreen } from './components/SplashScreen'
 import { CustomerHome } from './components/Customer/CustomerHome'
 import { ProfilePage } from './components/Customer/ProfilePage'
 import { EditProfilePage } from './components/Customer/ProfileEdit'
+import { ShopMenu } from './components/Customer/ShopMenu'
+import { Checkout } from './components/Customer/CheckOut'
+import { OrderTracking } from './components/Customer/OrderTracking'
+import { OrderHistory } from './components/Customer/OrderHistory'
+import { BottomNav } from './components/Customer/BottomNav'
+import { NotificationSystem } from './components/NotificationSystem'
 import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
 import { ShopkeeperSidebar } from './components/Shopkeeper/Sidebar'
 import { ShopForm } from './components/Shopkeeper/ShopForm'
@@ -115,12 +121,20 @@ function App() {
 // Customer Layout Component
 function CustomerLayout() {
   return (
-    <Routes>
-      <Route path="home" element={<CustomerHome />} />
-      <Route path="profile" element={<ProfilePage />} />
-      <Route path="edit-profile" element={<EditProfilePage />} />
-      <Route path="*" element={<Navigate to="/customer/home" replace />} />
-    </Routes>
+    <div className="min-h-screen bg-slate-900">
+      <NotificationSystem />
+      <Routes>
+        <Route path="home" element={<CustomerHome />} />
+        <Route path="shop/:slug" element={<ShopMenu />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="orders" element={<OrderHistory />} />
+        <Route path="order-tracking/:orderId" element={<OrderTracking />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="edit-profile" element={<EditProfilePage />} />
+        <Route path="*" element={<Navigate to="/customer/home" replace />} />
+      </Routes>
+      <BottomNav />
+    </div>
   )
 }
 
