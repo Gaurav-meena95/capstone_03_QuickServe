@@ -5,7 +5,7 @@ const controller = require('./controller');
 
 // Shop routes
 customerRouter.get('/shops', verifymiddleware, controller.getAllShops);
-customerRouter.get('/shops/:slug', verifymiddleware, controller.getShopMenu);
+customerRouter.get('/shops/:slug', controller.getShopMenu); // Public route for QR code scanning
 
 // Order routes
 customerRouter.post('/orders', verifymiddleware, controller.createOrder);

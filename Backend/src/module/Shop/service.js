@@ -151,6 +151,14 @@ exports.getDashboardForUser = async (userId) => {
               menuItem: true,
             },
           },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true
+            }
+          }
         },
         orderBy: { placedAt: "desc" },
         take: 50, 

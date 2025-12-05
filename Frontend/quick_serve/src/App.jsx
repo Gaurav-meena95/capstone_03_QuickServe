@@ -89,6 +89,9 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          
+          {/* Public Shop Menu - for QR code scanning */}
+          <Route path="/shop/:slug" element={<ShopMenu />} />
 
           {/* Customer Routes */}
           <Route

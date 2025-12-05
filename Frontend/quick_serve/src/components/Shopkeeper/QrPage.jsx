@@ -1,24 +1,133 @@
 import { motion } from "framer-motion";
-import { Copy, RotateCw, Download, Share2 } from "lucide-react";
+import { Copy, Download, Share2, Printer } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import { fetchWithAuth } from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+const FRONTEND_URL = "https://capstone-03-quick-serve.vercel.app";
 
 export function QRPage() {
-  const shopUrl = "https://ordertrack.app/burger-palace";
+  const navigate = useNavigate();
+  const qrRef = useRef(null);
+  const [shop, setShop] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/me`);
+        
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.clear();
+            navigate('/login');
+            return;
+          }
+          throw new Error('Failed to fetch shop data');
+        }
+        
+        const data = await response.json();
+        console.log('Shop data:', data);
+        setShop(data.shop);
+      } catch (err) {
+        console.error('Error fetching shop:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchShop();
+  }, [navigate]);
+
+  const shopUrl = FRONTEND_URL; // Just the homepage URL
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shopUrl);
-    alert("Link copied to clipboard!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRegenerate = () => {
-    alert("QR code regenerated!");
+  const handleDownload = () => {
+    const svg = qrRef.current.querySelector('svg');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    canvas.width = 1000;
+    canvas.height = 1000;
+    
+    img.onload = () => {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `${shop?.slug || 'shop'}-qr-code.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${shop?.name} - Order Menu`,
+          text: `Scan to order from ${shop?.name}`,
+          url: shopUrl
+        });
+      } catch (err) {
+        console.log('Share cancelled or failed');
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!shop) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Shop not found</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-bg">
       {/* Header */}
-      <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
+      <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl no-print">
         <div className="p-4 flex items-center gap-4">
           <h1 className="font-bold text-white text-xl">QR Code</h1>
+          <div className="ml-auto">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handlePrint}
+              className="gradient-orange text-slate-900 px-4 py-2 rounded-xl font-semibold flex items-center gap-2"
+            >
+              <Printer className="w-4 h-4" />
+              Print QR Code
+            </motion.button>
+          </div>
         </div>
       </div>
 
@@ -49,9 +158,9 @@ export function QRPage() {
             />
 
             <div className="relative z-10">
-              <h2 className="text-2xl font-bold text-white mb-2">Scan to Order</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{shop.name}</h2>
               <p className="text-slate-400 mb-8">
-                Customers can scan this QR code to view your menu
+                Scan to view menu and place orders
               </p>
 
               {/* QR Code Display */}
@@ -60,9 +169,10 @@ export function QRPage() {
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", delay: 0.2, duration: 0.6 }}
                 className="inline-block relative mb-8"
+                ref={qrRef}
               >
                 <motion.div
-                  className="absolute -inset-4 rounded-3xl"
+                  className="absolute -inset-4 rounded-3xl no-print"
                   animate={{
                     boxShadow: [
                       "0 0 40px rgba(249, 115, 22, 0.3)",
@@ -77,83 +187,58 @@ export function QRPage() {
                   }}
                 />
                 
-                <div className="relative bg-white p-6 rounded-2xl">
-                  {/* Simple QR-like pattern */}
-                  <svg width="220" height="220" viewBox="0 0 220 220">
-                    {/* Corner markers */}
-                    <rect x="10" y="10" width="60" height="60" fill="none" stroke="#000" strokeWidth="8" />
-                    <rect x="25" y="25" width="30" height="30" fill="#000" />
-                    
-                    <rect x="150" y="10" width="60" height="60" fill="none" stroke="#000" strokeWidth="8" />
-                    <rect x="165" y="25" width="30" height="30" fill="#000" />
-                    
-                    <rect x="10" y="150" width="60" height="60" fill="none" stroke="#000" strokeWidth="8" />
-                    <rect x="25" y="165" width="30" height="30" fill="#000" />
-                    
-                    {/* Data pattern */}
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      Array.from({ length: 12 }).map((_, j) => {
-                        if (Math.random() > 0.5) {
-                          return (
-                            <rect
-                              key={`${i}-${j}`}
-                              x={80 + j * 10}
-                              y={80 + i * 10}
-                              width="8"
-                              height="8"
-                              fill="#000"
-                            />
-                          );
-                        }
-                        return null;
-                      })
-                    ))}
-                    
-                    {/* Center logo placeholder */}
-                    <circle cx="110" cy="110" r="20" fill="#F97316" />
-                    <text x="110" y="118" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">OT</text>
-                  </svg>
+                <div className="relative bg-white p-8 rounded-2xl shadow-2xl">
+                  <QRCodeSVG
+                    value={shopUrl}
+                    size={280}
+                    level="H"
+                    includeMargin={true}
+                    imageSettings={{
+                      src: shop.logo || shop.image || "",
+                      height: 40,
+                      width: 40,
+                      excavate: true,
+                    }}
+                  />
                 </div>
 
                 {/* Corner decorations */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-2xl -translate-x-2 -translate-y-2" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-2xl translate-x-2 -translate-y-2" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-2xl -translate-x-2 translate-y-2" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-2xl translate-x-2 translate-y-2" />
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-orange-500 rounded-tl-2xl -translate-x-2 -translate-y-2 no-print" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-orange-500 rounded-tr-2xl translate-x-2 -translate-y-2 no-print" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-green-500 rounded-bl-2xl -translate-x-2 translate-y-2 no-print" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-green-500 rounded-br-2xl translate-x-2 translate-y-2 no-print" />
               </motion.div>
+              
+              {/* Print-only shop name */}
+              <div className="print-only text-center mb-4">
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">{shop.name}</h1>
+                <p className="text-lg text-slate-700">Scan to Order</p>
+              </div>
 
               {/* Shop URL */}
-              <div className="glass rounded-xl p-4 mb-6 flex items-center gap-3">
+              <div className="glass rounded-xl p-4 mb-6 flex items-center gap-3 no-print">
                 <div className="flex-1 text-left">
-                  <p className="text-xs text-slate-400 mb-1">Shop URL</p>
+                  <p className="text-xs text-slate-400 mb-1">Shop Menu URL</p>
                   <p className="text-white font-mono text-sm truncate">{shopUrl}</p>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCopyLink}
-                  className="w-10 h-10 rounded-xl gradient-orange flex items-center justify-center flex-shrink-0"
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                    copied ? 'bg-green-500' : 'gradient-orange'
+                  }`}
                 >
                   <Copy className="w-5 h-5 text-slate-900" />
                 </motion.button>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 no-print">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleRegenerate}
-                  className="glass rounded-xl p-4 flex flex-col items-center gap-2 hover:border-orange-500/50 transition-all"
-                >
-                  <RotateCw className="w-5 h-5 text-orange-500" />
-                  <span className="text-xs text-slate-300">Regenerate</span>
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => alert("QR code downloaded!")}
+                  onClick={handleDownload}
                   className="glass rounded-xl p-4 flex flex-col items-center gap-2 hover:border-green-500/50 transition-all"
                 >
                   <Download className="w-5 h-5 text-green-500" />
@@ -163,24 +248,64 @@ export function QRPage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => alert("Share link opened!")}
+                  onClick={handleShare}
                   className="glass rounded-xl p-4 flex flex-col items-center gap-2 hover:border-blue-500/50 transition-all"
                 >
                   <Share2 className="w-5 h-5 text-blue-500" />
                   <span className="text-xs text-slate-300">Share</span>
                 </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handlePrint}
+                  className="glass rounded-xl p-4 flex flex-col items-center gap-2 hover:border-orange-500/50 transition-all"
+                >
+                  <Printer className="w-5 h-5 text-orange-500" />
+                  <span className="text-xs text-slate-300">Print</span>
+                </motion.button>
               </div>
 
               {/* Info */}
-              <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+              <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl no-print">
                 <p className="text-sm text-orange-400">
                   💡 Print this QR code and place it on tables or at the counter for easy customer access
                 </p>
+              </div>
+              
+              {/* Print-only URL */}
+              <div className="print-only mt-6 text-center">
+                <p className="text-slate-700 font-mono text-sm">{shopUrl}</p>
               </div>
             </div>
           </motion.div>
         </div>
       </div>
+      
+      {/* Print Styles */}
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-only {
+            display: block !important;
+          }
+          .gradient-bg {
+            background: white !important;
+          }
+          .glass {
+            background: white !important;
+            border: 2px solid #e5e7eb !important;
+          }
+        }
+        .print-only {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

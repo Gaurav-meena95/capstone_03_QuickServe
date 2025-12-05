@@ -62,7 +62,13 @@ exports.getOrderById = async (req, res) => {
 exports.getOrderByToken = async (req, res) => {
   try {
     const { token } = req.params;
-    const order = await service.getOrderByToken(token);
+    const { shopId } = req.query; // Get shopId from query params
+    
+    if (!shopId) {
+      return res.status(400).json({ success: false, message: 'shopId is required' });
+    }
+    
+    const order = await service.getOrderByToken(token, shopId);
     res.json({ success: true, order });
   } catch (err) {
     console.error('getOrderByToken error:', err);

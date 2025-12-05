@@ -21,16 +21,24 @@ export function ShopMenu() {
       const token = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
 
-      const headers = { 'Authorization': `JWT ${token}` };
-      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+      const headers = {};
+      
+      // Add auth headers only if user is logged in
+      if (token) {
+        headers['Authorization'] = `JWT ${token}`;
+        if (refreshToken) headers['x-refresh-token'] = refreshToken;
+      }
 
       const response = await fetch(`${backend}/api/customer/shops/${slug}`, { headers });
       
-      const newAccessToken = response.headers.get('x-access-token');
-      const newRefreshToken = response.headers.get('x-refresh-token');
-      
-      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+      // Update tokens only if user is logged in
+      if (token) {
+        const newAccessToken = response.headers.get('x-access-token');
+        const newRefreshToken = response.headers.get('x-refresh-token');
+        
+        if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
+        if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+      }
 
       const data = await response.json();
 
@@ -75,6 +83,25 @@ export function ShopMenu() {
   };
 
   const handleCheckout = () => {
+    const token = localStorage.getItem('accessToken');
+    
+    // If not logged in, redirect to login with return URL
+    if (!token) {
+      const cartItems = Object.entries(cart).map(([itemId, quantity]) => ({
+        menuItemId: itemId,
+        quantity,
+      }));
+      
+      localStorage.setItem('cart', JSON.stringify({
+        shopId: shop.id,
+        items: cartItems,
+      }));
+      
+      localStorage.setItem('returnUrl', `/shop/${slug}`);
+      navigate('/login');
+      return;
+    }
+    
     const cartItems = Object.entries(cart).map(([itemId, quantity]) => ({
       menuItemId: itemId,
       quantity,
@@ -112,7 +139,14 @@ export function ShopMenu() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/customer/home')}
+            onClick={() => {
+              const token = localStorage.getItem('accessToken');
+              if (token) {
+                navigate('/customer/home');
+              } else {
+                navigate('/login');
+              }
+            }}
             className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer"
           >
             <ChevronLeft className="w-6 h-6 text-white" />

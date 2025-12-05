@@ -120,7 +120,7 @@ exports.createOrderNotification = async (order, type) => {
 
   const customerMessages = {
     ORDER_PLACED: `Your order #${order.token} has been placed successfully`,
-    ORDER_CONFIRMED: `Your order #${order.token} has been confirmed`,
+    ORDER_CONFIRMED: `Your order #${order.token} has been confirmed by the shop`,
     ORDER_PREPARING: `Your order #${order.token} is being prepared`,
     ORDER_READY: `Your order #${order.token} is ready for pickup!`,
     ORDER_COMPLETED: `Your order #${order.token} has been completed. Thank you!`,
@@ -128,7 +128,7 @@ exports.createOrderNotification = async (order, type) => {
   };
 
   const shopkeeperMessages = {
-    ORDER_PLACED: `New order #${order.token} received`,
+    ORDER_PLACED: `New order #${order.token} received from customer`,
     ORDER_CONFIRMED: `Order #${order.token} confirmed`,
     ORDER_PREPARING: `Order #${order.token} is being prepared`,
     ORDER_READY: `Order #${order.token} is ready`,
@@ -142,27 +142,40 @@ exports.createOrderNotification = async (order, type) => {
     orderNumber: order.orderNumber
   };
 
-  // Create notification for customer
-  await exports.createNotification(
-    order.customerId,
-    type,
-    titles[type],
-    customerMessages[type],
-    notificationData
-  );
-
-  // Create notification for shopkeeper
-  const shop = await prisma.shop.findUnique({
-    where: { id: order.shopId },
-    select: { shopkeeperId: true }
-  });
-
-  if (shop) {
+  // ORDER_PLACED: Notify both customer (confirmation) and shopkeeper (new order)
+  if (type === 'ORDER_PLACED') {
+    // Notify customer - order placed successfully
     await exports.createNotification(
-      shop.shopkeeperId,
+      order.customerId,
+      type,
+      'Order Placed Successfully',
+      customerMessages[type],
+      notificationData
+    );
+
+    // Notify shopkeeper - new order received
+    const shop = await prisma.shop.findUnique({
+      where: { id: order.shopId },
+      select: { shopkeeperId: true }
+    });
+
+    if (shop) {
+      await exports.createNotification(
+        shop.shopkeeperId,
+        type,
+        titles[type],
+        shopkeeperMessages[type],
+        notificationData
+      );
+    }
+  } 
+  // All other status changes: Notify customer only (their order status changed)
+  else {
+    await exports.createNotification(
+      order.customerId,
       type,
       titles[type],
-      shopkeeperMessages[type],
+      customerMessages[type],
       notificationData
     );
   }

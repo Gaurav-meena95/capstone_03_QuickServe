@@ -109,8 +109,26 @@ exports.createOrder = async (userId, orderData) => {
 
   const total = subtotal;
 
-  // Generate unique token and order number
-  const token = `TKN${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+  // Generate daily sequential token number
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Count today's orders for this shop to get next token number
+  const todayOrderCount = await prisma.order.count({
+    where: {
+      shopId,
+      placedAt: {
+        gte: today,
+        lt: tomorrow
+      }
+    }
+  });
+  
+  const tokenNumber = todayOrderCount + 1;
+  const token = tokenNumber.toString();
   const orderNumber = `ORD${Date.now()}`;
 
   const order = await prisma.order.create({
@@ -202,10 +220,13 @@ exports.getOrderById = async (userId, orderId) => {
   return order;
 };
 
-// Get order by token
-exports.getOrderByToken = async (token) => {
-  const order = await prisma.order.findUnique({
-    where: { token },
+// Get order by token and shopId
+exports.getOrderByToken = async (token, shopId) => {
+  const order = await prisma.order.findFirst({
+    where: { 
+      token,
+      shopId 
+    },
     include: {
       items: {
         include: {
