@@ -1,33 +1,140 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Bell, Menu as MenuIcon, Clock, Users, TrendingUp } from "lucide-react";
-// import {button} from '../../assets/ui'
+import { useState, useEffect } from "react";
+import { Bell, Clock, Users, TrendingUp, DollarSign } from "lucide-react";
+import { fetchWithAuth } from '../../utils/api';
+import { useNavigate } from 'react-router-dom';
 
-
-
-
-const activeOrders = [
-  { id: 1, token: "#15", customer: "John Doe", items: ["Burger x2", "Fries"], total: 25.98, time: "5m", status: "new" },
-  { id: 2, token: "#14", customer: "Sarah Smith", items: ["Pizza", "Coke"], total: 18.99, time: "8m", status: "preparing" },
-  { id: 3, token: "#13", customer: "Mike Johnson", items: ["Salad", "Water"], total: 12.50, time: "12m", status: "preparing" },
-  { id: 4, token: "#12", customer: "Emma Wilson", items: ["Burger x2", "Pizza"], total: 46.17, time: "15m", status: "ready" },
-];
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
 export function ShopkeeperDashboard() {
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
+        
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.clear();
+            navigate('/login');
+            return;
+          }
+          throw new Error('Failed to fetch dashboard data');
+        }
+        
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Error fetching dashboard:', err);
+        setError('Unable to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboard();
+  }, [navigate]);
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+      
+      // Refresh dashboard data
+      const dashResponse = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
+      const data = await dashResponse.json();
+      setDashboardData(data);
+    } catch (err) {
+      console.error('Error updating order status:', err);
+    }
+  };
+
+  const getTimeAgo = (date) => {
+    const now = new Date();
+    const orderDate = new Date(date);
+    const diffMs = now - orderDate;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "new":
+      case "PENDING":
+      case "CONFIRMED":
         return "border-orange-500 bg-orange-500/10 text-orange-400";
-      case "preparing":
+      case "PREPARING":
         return "border-blue-500 bg-blue-500/10 text-blue-400";
-      case "ready":
+      case "READY":
         return "border-green-500 bg-green-500/10 text-green-400";
       default:
         return "border-slate-500 bg-slate-500/10 text-slate-400";
     }
   };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      'PENDING': 'New',
+      'CONFIRMED': 'Confirmed',
+      'PREPARING': 'Preparing',
+      'READY': 'Ready',
+      'COMPLETED': 'Completed',
+      'CANCELLED': 'Cancelled'
+    };
+    return labels[status] || status;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">{error || 'Failed to load dashboard'}</div>
+      </div>
+    );
+  }
+
+  const { shop, orders, stats } = dashboardData;
+  
+  // Filter active orders (not completed or cancelled)
+  const activeOrders = orders.filter(
+    order => !['COMPLETED', 'CANCELLED'].includes(order.status)
+  );
+  
+  // Calculate today's revenue
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todaysOrders = orders.filter(order => {
+    const orderDate = new Date(order.placedAt);
+    return orderDate >= today && order.status !== 'CANCELLED';
+  });
+  const todaysRevenue = todaysOrders.reduce((sum, order) => sum + order.total, 0);
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -37,7 +144,7 @@ export function ShopkeeperDashboard() {
           <div className="flex items-center gap-4">
             <div>
               <h1 className="font-bold text-white text-xl">Dashboard</h1>
-              <p className="text-xs text-slate-400">Burger Palace</p>
+              <p className="text-xs text-slate-400">{shop.name}</p>
             </div>
           </div>
           <motion.button
@@ -69,8 +176,10 @@ export function ShopkeeperDashboard() {
                 <Clock className="w-5 h-5 text-orange-500" />
                 <span className="text-slate-400 text-sm">Active Orders</span>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">4</p>
-              <p className="text-xs text-slate-500">+2 from last hour</p>
+              <p className="text-4xl font-bold text-white mb-1">{activeOrders.length}</p>
+              <p className="text-xs text-slate-500">
+                {stats.pending} pending, {stats.preparing} preparing
+              </p>
             </div>
           </div>
 
@@ -85,8 +194,10 @@ export function ShopkeeperDashboard() {
                 <Users className="w-5 h-5 text-green-500" />
                 <span className="text-slate-400 text-sm">Today's Orders</span>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">28</p>
-              <p className="text-xs text-slate-500">+15% from yesterday</p>
+              <p className="text-4xl font-bold text-white mb-1">{todaysOrders.length}</p>
+              <p className="text-xs text-slate-500">
+                {stats.completed} completed today
+              </p>
             </div>
           </div>
 
@@ -98,11 +209,13 @@ export function ShopkeeperDashboard() {
             />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-5 h-5 text-blue-500" />
-                <span className="text-slate-400 text-sm">Revenue</span>
+                <DollarSign className="w-5 h-5 text-blue-500" />
+                <span className="text-slate-400 text-sm">Today's Revenue</span>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">$892</p>
-              <p className="text-xs text-slate-500">Today's earnings</p>
+              <p className="text-4xl font-bold text-white mb-1">₹{todaysRevenue.toFixed(2)}</p>
+              <p className="text-xs text-slate-500">
+                Rating: {shop.rating.toFixed(1)} ({shop.totalRatings} reviews)
+              </p>
             </div>
           </div>
         </motion.div>
@@ -115,20 +228,26 @@ export function ShopkeeperDashboard() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Active Orders</h2>
-            <span className="text-sm text-slate-400">4 orders in queue</span>
+            <span className="text-sm text-slate-400">{activeOrders.length} orders in queue</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {activeOrders.map((order, index) => (
+          {activeOrders.length === 0 ? (
+            <div className="glass rounded-2xl p-12 text-center">
+              <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-400 text-lg">No active orders</p>
+              <p className="text-slate-500 text-sm mt-2">New orders will appear here</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {activeOrders.map((order, index) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 * index }}
                 whileHover={{ y: -5 }}
-                onClick={() => setSelectedOrder(order.id)}
                 className={`glass rounded-2xl p-6 cursor-pointer border-2 transition-all ${
-                  order.status === 'new' ? 'glow-orange' : ''
+                  order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'glow-orange' : ''
                 } ${getStatusColor(order.status)}`}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -136,28 +255,28 @@ export function ShopkeeperDashboard() {
                     <div className="flex items-center gap-3 mb-2">
                       <motion.div
                         className={`text-3xl font-bold ${
-                          order.status === 'new' ? 'text-orange-400' :
-                          order.status === 'preparing' ? 'text-blue-400' :
+                          order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'text-orange-400' :
+                          order.status === 'PREPARING' ? 'text-blue-400' :
                           'text-green-400'
                         }`}
-                        animate={order.status === 'new' ? {
+                        animate={order.status === 'PENDING' ? {
                           scale: [1, 1.1, 1],
                         } : {}}
                         transition={{
                           duration: 1,
-                          repeat: order.status === 'new' ? Infinity : 0,
+                          repeat: order.status === 'PENDING' ? Infinity : 0,
                         }}
                       >
-                        {order.token}
+                        #{order.token}
                       </motion.div>
                       <div className="flex-1">
-                        <p className="text-white font-bold">{order.customer}</p>
-                        <p className="text-xs text-slate-400">{order.time} ago</p>
+                        <p className="text-white font-bold">{order.customer?.name || 'Customer'}</p>
+                        <p className="text-xs text-slate-400">{getTimeAgo(order.placedAt)}</p>
                       </div>
                     </div>
                   </div>
                   
-                  {order.status === 'new' && (
+                  {order.status === 'PENDING' && (
                     <motion.div
                       animate={{
                         boxShadow: [
@@ -175,53 +294,69 @@ export function ShopkeeperDashboard() {
                 </div>
 
                 <div className="space-y-1 mb-4">
-                  {order.items.map((item, idx) => (
-                    <p key={idx} className="text-sm text-slate-300">• {item}</p>
+                  {order.items?.map((item, idx) => (
+                    <p key={idx} className="text-sm text-slate-300">
+                      • {item.menuItem?.name || 'Item'} x{item.quantity}
+                    </p>
                   ))}
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
                   <span className="text-xl font-bold text-white">
-                    ${order.total.toFixed(2)}
+                    ₹{order.total.toFixed(2)}
                   </span>
                   
-                  {order.status === 'new' && (
+                  {order.status === 'PENDING' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle start preparing
+                        handleUpdateOrderStatus(order.id, 'CONFIRMED');
                       }}
-                      className="gradient-orange text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)]"
+                      className="gradient-orange text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold"
+                    >
+                      Accept Order
+                    </button>
+                  )}
+                  
+                  {order.status === 'CONFIRMED' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUpdateOrderStatus(order.id, 'PREPARING');
+                      }}
+                      className="gradient-orange text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold"
                     >
                       Start Preparing
                     </button>
                   )}
                   
-                  {order.status === 'preparing' && (
+                  {order.status === 'PREPARING' && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle mark ready
+                        handleUpdateOrderStatus(order.id, 'READY');
                       }}
-                      className="gradient-green text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)]"
+                      className="gradient-green text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold"
                     >
                       Mark Ready
                     </button>
                   )}
                   
-                  {order.status === 'ready' && (
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                      className="px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-sm"
+                  {order.status === 'READY' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUpdateOrderStatus(order.id, 'COMPLETED');
+                      }}
+                      className="px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/30"
                     >
-                      Ready for Pickup
-                    </motion.div>
+                      Complete Order
+                    </button>
                   )}
                 </div>
 
                 {/* Timer Ring for Preparing Orders */}
-                {order.status === 'preparing' && (
+                {order.status === 'PREPARING' && (
                   <div className="mt-4 pt-4 border-t border-slate-700/50">
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12">
@@ -256,7 +391,7 @@ export function ShopkeeperDashboard() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-400">Preparation Time</p>
-                        <p className="text-white font-bold">8 mins</p>
+                        <p className="text-white font-bold">{getTimeAgo(order.preparingAt || order.placedAt)}</p>
                       </div>
                     </div>
                   </div>
@@ -264,6 +399,7 @@ export function ShopkeeperDashboard() {
               </motion.div>
             ))}
           </div>
+          )}
         </motion.div>
       </div>
     </div>
