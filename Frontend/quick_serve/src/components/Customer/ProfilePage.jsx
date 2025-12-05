@@ -1,12 +1,46 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, LogOut, Edit, Bell, CreditCard } from "lucide-react";
+import { User, Mail, Phone, LogOut, Edit, Bell, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
 import { Switch } from "../../assets/ui/switch";
 import { useNavigate } from 'react-router-dom'
+import { fetchWithAuth } from '../../utils/api'
+
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL
 
 export function ProfilePage() {
   const navigate = useNavigate()
   const userRole = localStorage.getItem('userRole')?.toLowerCase() || 'customer'
+  
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true)
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/profile`)
+        
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            localStorage.clear()
+            navigate('/login')
+            return
+          }
+          throw new Error('Failed to fetch profile')
+        }
+        
+        const data = await response.json()
+        setProfile(data.user)
+      } catch (err) {
+        console.error('Error fetching profile:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchProfile()
+  }, [navigate])
   
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
@@ -17,7 +51,37 @@ export function ProfilePage() {
   }
   
   const handleEdit = () => {
-    navigate('/customer/edit-profile')
+    const role = profile?.role?.toLowerCase() || userRole
+    if (role === 'shopkeeper') {
+      navigate('/shopkeeper/edit-profile')
+    } else {
+      navigate('/customer/edit-profile')
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Loading profile...</div>
+      </div>
+    )
+  }
+  
+  if (!profile) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Failed to load profile</div>
+      </div>
+    )
+  }
+  
+  const getInitials = (name) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
   }
 
   return (
@@ -40,12 +104,14 @@ export function ProfilePage() {
         >
           <div className="flex items-center gap-4 mb-6">
             <Avatar className="w-20 h-20 border-2 border-orange-500">
-              <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200" />
-              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">JD</AvatarFallback>
+              <AvatarImage src={profile.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200"} />
+              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                {getInitials(profile.name)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-white mb-1">John Doe</h2>
-              <p className="text-slate-400 capitalize">{userRole}</p>
+              <h2 className="text-2xl font-bold text-white mb-1">{profile.name}</h2>
+              <p className="text-slate-400 capitalize">{profile.role.toLowerCase()}</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -98,7 +164,7 @@ export function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-slate-400">Email</p>
-                <p className="text-white">john.doe@example.com</p>
+                <p className="text-white">{profile.email}</p>
               </div>
             </div>
 
@@ -108,17 +174,7 @@ export function ProfilePage() {
               </div>
               <div>
                 <p className="text-xs text-slate-400">Phone</p>
-                <p className="text-white">+1 234 567 8900</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400">Address</p>
-                <p className="text-white">123 Main St, City, State 12345</p>
+                <p className="text-white">{profile.phone || 'Not provided'}</p>
               </div>
             </div>
           </div>

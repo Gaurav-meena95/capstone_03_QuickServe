@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, UtensilsCrossed, QrCode, BarChart3, Settings, LogOut, X, Zap } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, QrCode, BarChart3, Settings, LogOut, X, Zap, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 
@@ -8,6 +8,7 @@ const menuItems = [
   { id: 'menu-manager', icon: UtensilsCrossed, label: 'Menu Manager', path: '/shopkeeper/menu-manager' },
   { id: 'qr-page', icon: QrCode, label: 'QR Code', path: '/shopkeeper/qr-page' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics', path: '/shopkeeper/analytics' },
+  { id: 'profile', icon: User, label: 'Profile', path: '/shopkeeper/profile' },
   { id: 'settings', icon: Settings, label: 'Settings', path: '/shopkeeper/settings' },
 ];
 

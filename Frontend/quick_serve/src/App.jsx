@@ -172,6 +172,14 @@ function ShopkeeperLayout() {
             element={<SettingsPage />}
           />
           <Route
+            path="profile"
+            element={<ProfilePage />}
+          />
+          <Route
+            path="edit-profile"
+            element={<EditProfilePage />}
+          />
+          <Route
             path="shop/create"
             element={<ShopForm shopData={null} isEditing={false} />}
           />

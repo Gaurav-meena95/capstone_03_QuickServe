@@ -1,27 +1,149 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Save, User, Mail, Phone } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../../assets/ui/avatar";
 import { Button } from '../../assets/ui/button'
 import { Label } from "../../assets/ui/label";
 import { useNavigate } from 'react-router-dom'
+import { fetchWithAuth } from '../../utils/api'
+
+const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL
 
 export function EditProfilePage() {
     const navigate = useNavigate()
     const userRole = localStorage.getItem('userRole')?.toLowerCase() || 'customer'
     
     const [editProfile, setEditProfile] = useState({
-        name: "Gaurav Meena",
-        email: "gaurav.meena2024@gmail.com",
-        phone: "7724014495",
-        address: "Karond Bhopal",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200",
+        name: "",
+        email: "",
+        phone: "",
+        avatar: "",
     });
+    
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState(null)
+    const [success, setSuccess] = useState(false)
 
-    const handleCancel = () => navigate("/customer/profile");
-    const handleSave = () => {
-        console.log(editProfile)
+    // Fetch profile data on component mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                setLoading(true)
+                setError(null)
+                
+                const response = await fetchWithAuth(`${API_BASE_URL}/api/profile`)
+                
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        // Redirect to login if not authenticated
+                        localStorage.clear()
+                        navigate('/login')
+                        return
+                    }
+                    throw new Error('Failed to fetch profile')
+                }
+                
+                const data = await response.json()
+                setEditProfile({
+                    name: data.user.name || "",
+                    email: data.user.email || "",
+                    phone: data.user.phone || "",
+                    avatar: data.user.avatar || "",
+                })
+            } catch (err) {
+                console.error('Error fetching profile:', err)
+                setError('Unable to load profile data')
+            } finally {
+                setLoading(false)
+            }
+        }
+        
+        fetchProfile()
+    }, [navigate])
+
+    const handleCancel = () => {
+        if (userRole === 'shopkeeper') {
+            navigate("/shopkeeper/profile")
+        } else {
+            navigate("/customer/profile")
+        }
     };
+    
+    const handleSave = async () => {
+        try {
+            setSaving(true)
+            setError(null)
+            setSuccess(false)
+            
+            // Client-side validation
+            if (!editProfile.name || editProfile.name.trim() === '') {
+                setError('Name is required')
+                setSaving(false)
+                return
+            }
+            
+            if (editProfile.phone && editProfile.phone.length !== 10) {
+                setError('Phone must be 10 digits')
+                setSaving(false)
+                return
+            }
+            
+            const response = await fetchWithAuth(`${API_BASE_URL}/api/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: editProfile.name,
+                    phone: editProfile.phone,
+                    avatar: editProfile.avatar
+                })
+            })
+            
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.clear()
+                    navigate('/login')
+                    return
+                }
+                const errorData = await response.json()
+                throw new Error(errorData.message || 'Failed to update profile')
+            }
+            
+            const data = await response.json()
+            setEditProfile({
+                name: data.user.name || "",
+                email: data.user.email || "",
+                phone: data.user.phone || "",
+                avatar: data.user.avatar || "",
+            })
+            setSuccess(true)
+            
+            // Show success message and redirect after 2 seconds
+            setTimeout(() => {
+                if (userRole === 'shopkeeper') {
+                    navigate("/shopkeeper/profile")
+                } else {
+                    navigate("/customer/profile")
+                }
+            }, 2000)
+            
+        } catch (err) {
+            console.error('Error updating profile:', err)
+            setError(err.message || 'Failed to update profile')
+        } finally {
+            setSaving(false)
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen gradient-bg flex items-center justify-center">
+                <div className="text-white text-xl">Loading profile...</div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen gradient-bg pb-24">
@@ -36,13 +158,35 @@ export function EditProfilePage() {
                         <Button
                             variant="ghost"
                             className="text-white hover:bg-slate-800 hover:cursor-pointer"
-                            onClick={() => navigate("/customer/profile")}
+                            onClick={handleCancel}
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </Button>
                         <h1 className="text-3xl font-bold text-white">Edit Profile</h1>
                     </div>
                 </motion.div>
+                
+                {/* Success Message */}
+                {success && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-4 p-4 bg-green-500/20 border border-green-500 rounded-lg"
+                    >
+                        <p className="text-green-400 text-center">Profile updated successfully!</p>
+                    </motion.div>
+                )}
+                
+                {/* Error Message */}
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-4 p-4 bg-red-500/20 border border-red-500 rounded-lg"
+                    >
+                        <p className="text-red-400 text-center">{error}</p>
+                    </motion.div>
+                )}
 
                 {/* Preview + Form Card */}
                 <motion.div
@@ -90,10 +234,12 @@ export function EditProfilePage() {
                                     id="email"
                                     type="email"
                                     value={editProfile.email}
-                                    className="text-white w-full bg-slate-600/60 p-2 rounded-lg ml-2 "
-                                    onChange={(e) => setEditProfile({ ...editProfile, email: e.target.value })}
+                                    className="text-white w-full bg-slate-600/40 p-2 rounded-lg ml-2 cursor-not-allowed"
+                                    readOnly
+                                    disabled
                                 />
                             </div>
+                            <p className="text-xs text-slate-400 ml-8">Email cannot be changed</p>
                         </div>
 
                         <div className="grid gap-2">
@@ -103,21 +249,10 @@ export function EditProfilePage() {
                                 <input
                                     id="phone"
                                     value={editProfile.phone}
+                                    placeholder="10 digit phone number"
+                                    maxLength="10"
                                     className="text-white  w-full bg-slate-600/60 p-2 rounded-lg ml-2 "
-                                    onChange={(e) => setEditProfile({ ...editProfile, phone: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="address" className="text-white">Address</Label>
-                            <div className="flex items-center gap-3 ">
-                                <MapPin className="w-5 h-5 text-blue-500" />
-                                <input
-                                    id="address"
-                                    value={editProfile.address}
-                                    className="text-white  w-full bg-slate-600/60 p-2 rounded-lg ml-2"
-                                    onChange={(e) => setEditProfile({ ...editProfile, address: e.target.value })}
+                                    onChange={(e) => setEditProfile({ ...editProfile, phone: e.target.value.replace(/\D/g, '') })}
                                 />
                             </div>
                         </div>
@@ -140,11 +275,12 @@ export function EditProfilePage() {
                         Cancel
                     </Button>
                     <Button
-                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white hover:cursor-pointer"
+                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleSave}
+                        disabled={saving}
                     >
                         <Save className="w-5 h-5 mr-2" />
-                        Save
+                        {saving ? 'Saving...' : 'Save'}
                     </Button>
                 </motion.div>
 
