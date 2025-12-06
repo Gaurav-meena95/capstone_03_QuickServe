@@ -45,7 +45,7 @@ export function CustomerHome() {
 
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '10',
+                limit: '6',
             });
 
             if (searchQuery) params.append('search', searchQuery);
