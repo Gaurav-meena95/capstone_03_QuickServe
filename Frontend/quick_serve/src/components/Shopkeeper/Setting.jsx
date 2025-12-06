@@ -115,10 +115,29 @@ export function SettingsPage() {
       }
 
       const shop = data.shop || data;
+      
+      // Calculate if shop should be open based on saved operating hours
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      const [openHour, openMin] = (shop.openingTime || formData.openingTime).split(':').map(Number);
+      const [closeHour, closeMin] = (shop.closingTime || formData.closingTime).split(':').map(Number);
+      
+      const openingMinutes = openHour * 60 + openMin;
+      const closingMinutes = closeHour * 60 + closeMin;
+      
+      let shouldBeOpen;
+      if (closingMinutes < openingMinutes) {
+        shouldBeOpen = currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
+      } else {
+        shouldBeOpen = currentMinutes >= openingMinutes && currentMinutes <= closingMinutes;
+      }
+      
       const normalizedShop = {
         ...shop,
         cuisineType: shop.cuisineType || shop.category || 'Category',
-        isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'OPEN'),
+        isOpen: shouldBeOpen,
+        status: shouldBeOpen ? 'OPEN' : 'CLOSED',
       };
 
       setShopData(normalizedShop);

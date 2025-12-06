@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, UtensilsCrossed, QrCode, BarChart3, Settings, LogOut, X, Zap, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const menuItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/shopkeeper/dashboard' },
@@ -16,6 +16,41 @@ export function ShopkeeperSidebar({ shopData, isOpen, setIsOpen }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [activeMenu, setActiveMenu] = useState('dashboard')
+  const [currentShopStatus, setCurrentShopStatus] = useState(shopData?.isOpen)
+  
+  // Check shop status based on operating hours
+  useEffect(() => {
+    const checkShopStatus = () => {
+      if (!shopData?.openingTime || !shopData?.closingTime) return;
+      
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      
+      const [openHour, openMin] = shopData.openingTime.split(':').map(Number);
+      const [closeHour, closeMin] = shopData.closingTime.split(':').map(Number);
+      
+      const openingMinutes = openHour * 60 + openMin;
+      const closingMinutes = closeHour * 60 + closeMin;
+      
+      let shouldBeOpen;
+      if (closingMinutes < openingMinutes) {
+        shouldBeOpen = currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
+      } else {
+        shouldBeOpen = currentMinutes >= openingMinutes && currentMinutes <= closingMinutes;
+      }
+      
+      setCurrentShopStatus(shouldBeOpen);
+    };
+    
+    // Check immediately
+    checkShopStatus();
+    
+    // Check every minute
+    const interval = setInterval(checkShopStatus, 60000);
+    
+    return () => clearInterval(interval);
+  }, [shopData?.openingTime, shopData?.closingTime]);
+  
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
@@ -95,9 +130,9 @@ export function ShopkeeperSidebar({ shopData, isOpen, setIsOpen }) {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400">Status</span>
                   <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${shopData?.isOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                    <span className={`${shopData?.isOpen ? 'text-green-400 font-bold' : 'text-red-400'}`}>
-                      {shopData?.isOpen ? 'Open' : 'Closed'}
+                    <div className={`w-2 h-2 rounded-full ${currentShopStatus ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                    <span className={`${currentShopStatus ? 'text-green-400 font-bold' : 'text-red-400'}`}>
+                      {currentShopStatus ? 'Open' : 'Closed'}
                     </span>
                   </div>
                 </div>
