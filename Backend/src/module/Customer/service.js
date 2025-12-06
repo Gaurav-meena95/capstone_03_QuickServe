@@ -257,8 +257,12 @@ exports.getOrderById = async (userId, orderId) => {
           name: true,
           slug: true,
           image: true,
-          phone: true,
           address: true,
+          shopkeeper: {
+            select: {
+              phone: true,
+            },
+          },
         },
       },
     },
@@ -368,4 +372,43 @@ exports.getFavorites = async (userId) => {
   });
 
   return favorites.map(f => f.shop);
+};
+
+// Cancel order (only PENDING or CONFIRMED)
+exports.cancelOrder = async (userId, orderId) => {
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      customerId: userId,
+    },
+  });
+
+  if (!order) throw new Error('Order not found');
+
+  // Only allow cancellation for PENDING or CONFIRMED orders
+  if (order.status !== 'PENDING' && order.status !== 'CONFIRMED') {
+    throw new Error('Order cannot be cancelled at this stage');
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: {
+      status: 'CANCELLED',
+      cancelledAt: new Date(),
+    },
+    include: {
+      items: {
+        include: {
+          menuItem: true,
+        },
+      },
+      shop: true,
+    },
+  });
+
+  // Create notification for cancelled order
+  const notificationService = require('../Notification/service');
+  await notificationService.createOrderNotification(updatedOrder, 'ORDER_CANCELLED');
+
+  return updatedOrder;
 };

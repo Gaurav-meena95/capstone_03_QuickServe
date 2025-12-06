@@ -17,6 +17,7 @@ export function OrderHistory() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -56,6 +57,7 @@ export function OrderHistory() {
     if (filter === 'all') return true;
     if (filter === 'active') return ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'].includes(order.status);
     if (filter === 'completed') return order.status === 'COMPLETED';
+    if (filter === 'cancelled') return order.status === 'CANCELLED';
     return true;
   });
 
@@ -68,6 +70,55 @@ export function OrderHistory() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleCancelOrder = async (e, orderId) => {
+    e.stopPropagation(); // Prevent navigation to order tracking
+    
+    if (!window.confirm('Are you sure you want to cancel this order?')) {
+      return;
+    }
+
+    try {
+      setCancellingOrderId(orderId);
+      const token = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      const headers = {
+        'Authorization': `JWT ${token}`,
+        'Content-Type': 'application/json',
+      };
+      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+
+      const response = await fetch(`${backend}/api/customer/orders/${orderId}/cancel`, {
+        method: 'PATCH',
+        headers,
+      });
+
+      const newAccessToken = response.headers.get('x-access-token');
+      const newRefreshToken = response.headers.get('x-refresh-token');
+      
+      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
+      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Order cancelled successfully');
+        fetchOrders(); // Refresh orders list
+      } else {
+        alert('Error: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      alert('Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  const canCancelOrder = (status) => {
+    return status === 'PENDING' || status === 'CONFIRMED';
   };
 
   if (loading) {
@@ -101,6 +152,7 @@ export function OrderHistory() {
             { key: 'all', label: 'All Orders' },
             { key: 'active', label: 'Active' },
             { key: 'completed', label: 'Completed' },
+            { key: 'cancelled', label: 'Cancelled' },
           ].map((tab) => (
             <motion.button
               key={tab.key}
@@ -149,8 +201,8 @@ export function OrderHistory() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -5 }}
-                  onClick={() => navigate(`/customer/order-tracking/${order.id}`)}
-                  className="glass rounded-2xl p-6 cursor-pointer hover:bg-slate-800/50 transition"
+                  onClick={() => order.status !== 'CANCELLED' && navigate(`/customer/order-tracking/${order.id}`)}
+                  className={`glass rounded-2xl p-6 ${order.status !== 'CANCELLED' ? 'cursor-pointer hover:bg-slate-800/50' : 'cursor-default'} transition`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -198,13 +250,45 @@ export function OrderHistory() {
                     <span className="text-xl font-bold text-orange-500">₹{order.total}</span>
                   </div>
 
-                  <motion.div
-                    className="mt-4 text-center text-orange-500 text-sm font-medium"
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    Tap to track order →
-                  </motion.div>
+                  {order.status === 'CANCELLED' ? (
+                    <div className="mt-4 text-center">
+                      <p className="text-red-400 text-sm font-medium">Order Cancelled</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {order.cancelledAt ? `Cancelled on ${formatDate(order.cancelledAt)}` : 'This order has been cancelled'}
+                      </p>
+                    </div>
+                  ) : canCancelOrder(order.status) ? (
+                    <div className="mt-4 flex gap-2">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/customer/order-tracking/${order.id}`);
+                        }}
+                        className="flex-1 py-2 rounded-xl glass border border-orange-500/50 text-orange-500 text-sm font-medium cursor-pointer"
+                      >
+                        Track Order
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={(e) => handleCancelOrder(e, order.id)}
+                        disabled={cancellingOrderId === order.id}
+                        className="flex-1 py-2 rounded-xl bg-red-600/10 border border-red-500/50 text-red-500 text-sm font-medium cursor-pointer disabled:opacity-50"
+                      >
+                        {cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel'}
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <motion.div
+                      className="mt-4 text-center text-orange-500 text-sm font-medium"
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      Tap to track order →
+                    </motion.div>
+                  )}
                 </motion.div>
               );
             })}

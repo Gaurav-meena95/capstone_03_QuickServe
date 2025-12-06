@@ -55,11 +55,12 @@ export function Checkout() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.order && data.order.id) {
         localStorage.removeItem('cart');
+        // Navigate to order tracking page
         navigate(`/customer/order-tracking/${data.order.id}`);
       } else {
-        alert('Error: ' + data.message);
+        alert('Error: ' + (data.message || 'Failed to create order'));
       }
     } catch (error) {
       console.error('Error placing order:', error);

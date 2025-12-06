@@ -11,6 +11,7 @@ customerRouter.get('/shops/:slug', controller.getShopMenu); // Public route for 
 customerRouter.post('/orders', verifymiddleware, controller.createOrder);
 customerRouter.get('/orders', verifymiddleware, controller.getMyOrders);
 customerRouter.get('/orders/:id', verifymiddleware, controller.getOrderById);
+customerRouter.patch('/orders/:id/cancel', verifymiddleware, controller.cancelOrder);
 customerRouter.get('/orders/track/:token', controller.getOrderByToken); // Public route
 
 // Favorites routes

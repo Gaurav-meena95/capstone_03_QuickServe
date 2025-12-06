@@ -135,7 +135,7 @@ export function ProfilePage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 border border-slate-700 p-6 rounded-2xl">
+          <div className={`grid ${profile?.role === 'SHOPKEEPER' ? 'grid-cols-3' : 'grid-cols-2'} gap-4 border border-slate-700 p-6 rounded-2xl`}>
             <div className="text-center rounded-b-full glow-white p-3">
               <div className="text-xl font-bold text-white mb-1 lg:text-3xl ">
                 {stats ? stats.totalOrders : '0'}
@@ -144,14 +144,14 @@ export function ProfilePage() {
                 {profile?.role === 'SHOPKEEPER' ? 'Total Orders' : 'Orders'}
               </div>
             </div>
-            <div className="text-center rounded-b-full glow-green p-3">
-              <div className="text-xl font-bold text-green-400 mb-1 lg:text-3xl">
-                {stats ? (profile?.role === 'SHOPKEEPER' ? stats.rating.toFixed(1) : stats.avgRating.toFixed(1)) : '0.0'}
+            {profile?.role === 'SHOPKEEPER' && (
+              <div className="text-center rounded-b-full glow-green p-3">
+                <div className="text-xl font-bold text-green-400 mb-1 lg:text-3xl">
+                  {stats ? stats.rating.toFixed(1) : '0.0'}
+                </div>
+                <div className="text-xs text-slate-400">Shop Rating</div>
               </div>
-              <div className="text-xs text-slate-400">
-                {profile?.role === 'SHOPKEEPER' ? 'Shop Rating' : 'Avg Rating'}
-              </div>
-            </div>
+            )}
             <div className="text-center rounded-b-full glow-orange p-3">
               <div className="text-xl font-bold text-orange-400 mb-1 lg:text-3xl">
                 ₹{stats ? (profile?.role === 'SHOPKEEPER' ? stats.totalRevenue.toFixed(0) : stats.totalSpent.toFixed(0)) : '0'}

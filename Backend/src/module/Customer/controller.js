@@ -110,3 +110,15 @@ exports.getFavorites = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Cancel order
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await service.cancelOrder(req.user.id, id);
+    res.json({ success: true, message: 'Order cancelled successfully', order });
+  } catch (err) {
+    console.error('cancelOrder error:', err);
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
