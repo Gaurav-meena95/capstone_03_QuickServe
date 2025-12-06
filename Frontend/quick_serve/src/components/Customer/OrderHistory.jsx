@@ -166,7 +166,7 @@ export function OrderHistory() {
                       <div>
                         <h3 className="font-bold text-white">{order.shop.name}</h3>
                         <p className="text-xs text-slate-400">{formatDate(order.placedAt)}</p>
-                        <p className="text-xs text-slate-500 font-mono mt-1">Token: {order.token}</p>
+                        <p className="text-xs text-slate-500 font-mono mt-1">Token: {order.token.split('-')[1] || order.token}</p>
                       </div>
                     </div>
                     <div className={`px-3 py-1 rounded-lg bg-${statusInfo.color}-500/10 border border-${statusInfo.color}-500/50 flex items-center gap-2`}>

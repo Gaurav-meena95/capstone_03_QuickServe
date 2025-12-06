@@ -90,7 +90,7 @@ export function OrderTracking() {
           </motion.button>
           <div>
             <h1 className="font-bold text-white text-xl">Track Order</h1>
-            <p className="text-xs text-slate-400">Token: {order.token}</p>
+            <p className="text-xs text-slate-400">Token: {order.token.split('-')[1] || order.token}</p>
           </div>
         </div>
       </div>
@@ -114,7 +114,7 @@ export function OrderTracking() {
             transition={{ duration: 2, repeat: Infinity }}
             className="text-5xl font-bold text-orange-500 mb-2"
           >
-            {order.token}
+            {order.token.split('-')[1] || order.token}
           </motion.div>
           <p className="text-sm text-slate-400">Show this at pickup counter</p>
         </motion.div>

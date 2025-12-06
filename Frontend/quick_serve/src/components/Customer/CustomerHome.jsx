@@ -12,6 +12,7 @@ export function CustomerHome() {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [sortBy, setSortBy] = useState('rating');
     const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
     
     const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -65,6 +66,7 @@ export function CustomerHome() {
 
             if (data.success) {
                 setShops(data.shops || []);
+                setTotalPages(data.pagination?.totalPages || 1);
             }
         } catch (error) {
             console.error('Error fetching shops:', error);
@@ -285,6 +287,57 @@ export function CustomerHome() {
                                     </div>
                                 </motion.div>
                             ))}
+                        </div>
+                    )}
+                    
+                    {/* Pagination */}
+                    {!loading && shops.length > 0 && totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-6">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className={`px-4 py-2 rounded-xl font-medium ${
+                                    page === 1
+                                        ? 'glass text-slate-500 cursor-not-allowed'
+                                        : 'gradient-orange text-slate-900 cursor-pointer'
+                                }`}
+                            >
+                                Previous
+                            </motion.button>
+                            
+                            <div className="flex items-center gap-2">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <motion.button
+                                        key={i + 1}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`w-10 h-10 rounded-xl font-medium ${
+                                            page === i + 1
+                                                ? 'gradient-orange text-slate-900'
+                                                : 'glass text-slate-300'
+                                        }`}
+                                    >
+                                        {i + 1}
+                                    </motion.button>
+                                ))}
+                            </div>
+                            
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className={`px-4 py-2 rounded-xl font-medium ${
+                                    page === totalPages
+                                        ? 'glass text-slate-500 cursor-not-allowed'
+                                        : 'gradient-orange text-slate-900 cursor-pointer'
+                                }`}
+                            >
+                                Next
+                            </motion.button>
                         </div>
                     )}
                 </motion.div>

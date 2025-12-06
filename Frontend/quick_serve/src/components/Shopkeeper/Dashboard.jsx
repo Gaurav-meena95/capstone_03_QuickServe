@@ -271,7 +271,7 @@ export function ShopkeeperDashboard() {
                             repeat: order.status === 'PENDING' ? Infinity : 0,
                           }}
                         >
-                          #{order.token}
+                          #{order.token.split('-')[1] || order.token}
                         </motion.div>
                         <div className="flex-1">
                           <p className="text-white font-bold">{order.customer?.name || 'Customer'}</p>

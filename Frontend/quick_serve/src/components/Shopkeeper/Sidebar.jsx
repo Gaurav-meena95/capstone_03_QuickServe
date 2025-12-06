@@ -12,10 +12,9 @@ const menuItems = [
   { id: 'settings', icon: Settings, label: 'Settings', path: '/shopkeeper/settings' },
 ];
 
-export function ShopkeeperSidebar({ shopData }) {
+export function ShopkeeperSidebar({ shopData, isOpen, setIsOpen }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [isOpen, setIsOpen] = useState(true)
   const [activeMenu, setActiveMenu] = useState('dashboard')
   const handleLogout = () => {
     localStorage.removeItem('accessToken')

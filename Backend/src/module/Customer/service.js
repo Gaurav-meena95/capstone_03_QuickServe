@@ -109,54 +109,102 @@ exports.createOrder = async (userId, orderData) => {
 
   const total = subtotal;
 
-  // Generate daily sequential token number
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Generate daily sequential token number using transaction
+  // Use UTC to avoid timezone issues
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
   
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  let order = null;
+  let retries = 10;
   
-  // Count today's orders for this shop to get next token number
-  const todayOrderCount = await prisma.order.count({
-    where: {
-      shopId,
-      placedAt: {
-        gte: today,
-        lt: tomorrow
+  while (retries > 0 && !order) {
+    try {
+      // Use a transaction to ensure atomicity
+      order = await prisma.$transaction(async (tx) => {
+        // Get the highest token number for today with FOR UPDATE lock
+        const lastOrder = await tx.order.findFirst({
+          where: {
+            shopId,
+            placedAt: {
+              gte: today,
+              lt: tomorrow
+            }
+          },
+          orderBy: {
+            placedAt: 'desc'
+          },
+          select: {
+            token: true
+          }
+        });
+        
+        // Calculate next token number
+        let tokenNumber = 1;
+        if (lastOrder && lastOrder.token) {
+          // Extract number from token (format: "YYYYMMDD-N")
+          const parts = lastOrder.token.split('-');
+          if (parts.length === 2) {
+            const lastTokenNum = parseInt(parts[1]);
+            if (!isNaN(lastTokenNum)) {
+              tokenNumber = lastTokenNum + 1;
+            }
+          }
+        }
+        
+        // Format: YYYYMMDD-N (e.g., "20251206-1")
+        const datePrefix = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+        const token = `${datePrefix}-${tokenNumber}`;
+        const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`;
+
+        // Create the order within the transaction
+        const newOrder = await tx.order.create({
+          data: {
+            token,
+            orderNumber,
+            customerId: userId,
+            shopId,
+            status: 'PENDING',
+            orderType: orderType || 'NOW',
+            scheduledTime: scheduledTime ? new Date(scheduledTime) : null,
+            subtotal,
+            total,
+            paymentMethod: paymentMethod || 'CASH',
+            paymentStatus: 'PENDING',
+            items: {
+              create: orderItems,
+            },
+          },
+          include: {
+            items: {
+              include: {
+                menuItem: true,
+              },
+            },
+            shop: true,
+          },
+        });
+        
+        return newOrder;
+      });
+      
+      // If successful, break the retry loop
+      break;
+    } catch (error) {
+      // If it's a unique constraint error on token, retry
+      if (error.code === 'P2002' && error.meta?.target?.includes('token')) {
+        retries--;
+        if (retries === 0) {
+          throw new Error('Unable to generate unique token. Please try again.');
+        }
+        // Wait a bit before retrying to avoid immediate collision
+        await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 150));
+      } else {
+        // For other errors, throw immediately
+        throw error;
       }
     }
-  });
-  
-  const tokenNumber = todayOrderCount + 1;
-  const token = tokenNumber.toString();
-  const orderNumber = `ORD${Date.now()}`;
-
-  const order = await prisma.order.create({
-    data: {
-      token,
-      orderNumber,
-      customerId: userId,
-      shopId,
-      status: 'PENDING',
-      orderType: orderType || 'NOW',
-      scheduledTime: scheduledTime ? new Date(scheduledTime) : null,
-      subtotal,
-      total,
-      paymentMethod: paymentMethod || 'CASH',
-      paymentStatus: 'PENDING',
-      items: {
-        create: orderItems,
-      },
-    },
-    include: {
-      items: {
-        include: {
-          menuItem: true,
-        },
-      },
-      shop: true,
-    },
-  });
+  }
 
   // Create notification for new order
   const notificationService = require('../Notification/service');

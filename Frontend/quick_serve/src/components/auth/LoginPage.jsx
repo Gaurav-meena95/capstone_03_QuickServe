@@ -17,7 +17,7 @@ export function LoginPage() {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e, selectedRole = role) => {
         e.preventDefault()
         setError('')
         setLoading(true)
@@ -26,7 +26,7 @@ export function LoginPage() {
             const res = await fetch(`${backend}/api/auth/login`, {
                 method: 'POST',
                 headers: { "Content-Type": 'application/json' },
-                body: JSON.stringify({ ...form, role })
+                body: JSON.stringify({ ...form, role: selectedRole })
             })
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Failed')
@@ -37,10 +37,10 @@ export function LoginPage() {
             if (loginUser.refreshToken) {
                 localStorage.setItem('refreshToken', loginUser.refreshToken)
             }
-            localStorage.setItem('userRole', role)
+            localStorage.setItem('userRole', selectedRole)
             
             // Navigate based on role - ShopCheck will handle shop verification
-            if (role === 'CUSTOMER') {
+            if (selectedRole === 'CUSTOMER') {
                 navigate('/customer/home')
             } else {
                 // For shopkeeper, go to dashboard - ShopCheck will redirect to create if no shop
@@ -155,7 +155,7 @@ export function LoginPage() {
                                     onClick={(e) => {
                                         e.preventDefault()
                                         setRole('CUSTOMER')
-                                        handleSubmit(e)
+                                        handleSubmit(e, 'CUSTOMER')
                                     }}
                                     type="button"
                                     disabled={loading}
@@ -168,7 +168,7 @@ export function LoginPage() {
                                     onClick={(e) => {
                                         e.preventDefault()
                                         setRole('SHOPKEEPER')
-                                        handleSubmit(e)
+                                        handleSubmit(e, 'SHOPKEEPER')
                                     }}
                                     type="button"
                                     disabled={loading}
