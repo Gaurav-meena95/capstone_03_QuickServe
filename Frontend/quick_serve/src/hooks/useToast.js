@@ -5,7 +5,7 @@ let toastId = 0;
 export function useToast() {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'success', duration = 3000) => {
+  const addToast = useCallback((message, type = 'success', duration = 2000) => {
     const id = toastId++;
     setToasts((prev) => [...prev, { id, message, type, duration }]);
   }, []);

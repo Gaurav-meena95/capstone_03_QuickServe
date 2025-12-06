@@ -9,6 +9,7 @@ const menuRoutes = require('./module/MenuManger/routes')
 const customerRoutes = require('./module/Customer/routes')
 const profileRoutes = require('./module/Profile/routes')
 const notificationRoutes = require('./module/Notification/routes')
+const reviewRoutes = require('./module/Review/routes')
 const app = express();
 app.use(express.json())
 app.use(cors())
@@ -20,6 +21,7 @@ app.use('/api/menu',menuRoutes)
 app.use('/api/customer',customerRoutes)
 app.use('/api/profile',profileRoutes)
 app.use('/api/notifications',notificationRoutes)
+app.use('/api/reviews',reviewRoutes)
 
 app.listen(PORT,()=>{
     console.log(`server has started ${PORT}`);

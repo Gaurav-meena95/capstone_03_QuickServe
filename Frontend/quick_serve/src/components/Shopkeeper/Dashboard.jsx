@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Clock, Users, DollarSign } from "lucide-react";
+import { Clock, Users, DollarSign, Star } from "lucide-react";
 import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '../NotificationPanel';
@@ -12,6 +12,8 @@ export function ShopkeeperDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'reviews'
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -42,6 +44,25 @@ export function ShopkeeperDashboard() {
 
     fetchDashboard();
   }, [navigate]);
+
+  // Fetch reviews when reviews tab is active
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (activeTab === 'reviews') {
+        try {
+          const response = await fetchWithAuth(`${API_BASE_URL}/api/reviews/my-shop`);
+          const data = await response.json();
+          if (data.success) {
+            setReviews(data.reviews || []);
+          }
+        } catch (err) {
+          console.error('Error fetching reviews:', err);
+        }
+      }
+    };
+
+    fetchReviews();
+  }, [activeTab]);
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
@@ -126,6 +147,11 @@ export function ShopkeeperDashboard() {
   // Filter active orders (not completed or cancelled)
   const activeOrders = orders.filter(
     order => !['COMPLETED', 'CANCELLED'].includes(order.status)
+  );
+
+  // Filter completed orders
+  const completedOrders = orders.filter(
+    order => order.status === 'COMPLETED'
   );
 
   // Calculate today's revenue
@@ -226,16 +252,52 @@ export function ShopkeeperDashboard() {
           </div>
         </motion.div>
 
-        {/* Active Orders */}
+        {/* Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide"
         >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Active Orders</h2>
-            <span className="text-sm text-slate-400">{activeOrders.length} orders in queue</span>
-          </div>
+          {[
+            { key: 'active', label: 'Active Orders', count: activeOrders.length },
+            { key: 'completed', label: 'Completed Orders', count: completedOrders.length },
+            { key: 'reviews', label: 'Reviews', count: shop.totalRatings },
+          ].map((tab) => (
+            <motion.button
+              key={tab.key}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-6 py-3 rounded-xl text-sm font-medium whitespace-nowrap cursor-pointer flex items-center gap-2 ${
+                activeTab === tab.key
+                  ? 'gradient-orange text-slate-900'
+                  : 'glass text-slate-300'
+              }`}
+            >
+              {tab.label}
+              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === tab.key
+                  ? 'bg-slate-900/30 text-slate-900'
+                  : 'bg-slate-700/50 text-slate-400'
+              }`}>
+                {tab.count}
+              </span>
+            </motion.button>
+          ))}
+        </motion.div>
+
+        {/* Active Orders Tab */}
+        {activeTab === 'active' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Active Orders</h2>
+              <span className="text-sm text-slate-400">{activeOrders.length} orders in queue</span>
+            </div>
 
           {activeOrders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
@@ -405,6 +467,161 @@ export function ShopkeeperDashboard() {
             </div>
           )}
         </motion.div>
+        )}
+
+        {/* Completed Orders Tab */}
+        {activeTab === 'completed' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Completed Orders</h2>
+              <span className="text-sm text-slate-400">{completedOrders.length} completed</span>
+            </div>
+
+            {completedOrders.length === 0 ? (
+              <div className="glass rounded-2xl p-12 text-center">
+                <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 text-lg">No completed orders yet</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {completedOrders.map((order, index) => (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="glass rounded-2xl p-6 border border-green-500/30"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="text-2xl font-bold text-green-400">
+                            #{order.token.split('-')[1] || order.token}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-bold">{order.customer?.name || 'Customer'}</p>
+                            <p className="text-xs text-slate-400">{getTimeAgo(order.completedAt || order.placedAt)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="px-3 py-1 bg-green-500/20 border border-green-500/50 rounded-full text-xs font-bold text-green-400">
+                        ✓ COMPLETED
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mb-4">
+                      {order.items?.map((item, idx) => (
+                        <p key={idx} className="text-sm text-slate-300">
+                          • {item.menuItem?.name || 'Item'} x{item.quantity}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                      <span className="text-xl font-bold text-white">
+                        ₹{order.total.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(order.completedAt || order.placedAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Reviews Tab */}
+        {activeTab === 'reviews' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Customer Reviews</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-orange-500">{shop.rating.toFixed(1)}</span>
+                <div>
+                  <p className="text-xs text-slate-400">Average Rating</p>
+                  <p className="text-xs text-slate-500">{shop.totalRatings} reviews</p>
+                </div>
+              </div>
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="glass rounded-2xl p-12 text-center">
+                <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 text-lg">No reviews yet</p>
+                <p className="text-slate-500 text-sm mt-2">Reviews from customers will appear here</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {reviews.map((review, index) => (
+                  <motion.div
+                    key={review.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="glass rounded-2xl p-6"
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                        {review.user?.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-bold">{review.user?.name || 'Anonymous'}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, i) => (
+                              <motion.div
+                                key={i}
+                                initial={{ scale: 0, rotate: -180 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ delay: 0.05 * i }}
+                              >
+                                <Star
+                                  className={`w-4 h-4 ${
+                                    i < review.rating
+                                      ? 'fill-orange-500 text-orange-500'
+                                      : 'text-slate-600'
+                                  }`}
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                          <span className="text-xs text-slate-500">
+                            {new Date(review.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {review.comment && (
+                      <p className="text-slate-300 text-sm leading-relaxed">
+                        "{review.comment}"
+                      </p>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );

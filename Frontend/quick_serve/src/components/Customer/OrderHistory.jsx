@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Clock, CheckCircle, XCircle, Package } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Package, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
+import { ReviewModal } from "./ReviewModal";
 
 const statusConfig = {
   PENDING: { color: 'orange', icon: Clock, label: 'Pending' },
@@ -20,6 +21,9 @@ export function OrderHistory() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderReviews, setOrderReviews] = useState({});
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -27,6 +31,35 @@ export function OrderHistory() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Check which orders have been reviewed
+  useEffect(() => {
+    const checkReviews = async () => {
+      const completedOrders = orders.filter(o => o.status === 'COMPLETED');
+      const token = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      for (const order of completedOrders) {
+        try {
+          const headers = { 'Authorization': `JWT ${token}` };
+          if (refreshToken) headers['x-refresh-token'] = refreshToken;
+
+          const response = await fetch(`${backend}/api/reviews/order/${order.id}`, { headers });
+          const data = await response.json();
+
+          if (data.success && data.review) {
+            setOrderReviews(prev => ({ ...prev, [order.id]: data.review }));
+          }
+        } catch (error) {
+          console.error('Error checking review:', error);
+        }
+      }
+    };
+
+    if (orders.length > 0) {
+      checkReviews();
+    }
+  }, [orders]);
 
   const fetchOrders = async () => {
     try {
@@ -122,6 +155,48 @@ export function OrderHistory() {
 
   const canCancelOrder = (status) => {
     return status === 'PENDING' || status === 'CONFIRMED';
+  };
+
+  const handleRateOrder = (e, order) => {
+    e.stopPropagation();
+    setSelectedOrder(order);
+    setReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      const headers = {
+        'Authorization': `JWT ${token}`,
+        'Content-Type': 'application/json',
+      };
+      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+
+      const response = await fetch(`${backend}/api/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          shopId: selectedOrder.shop.id,
+          orderId: selectedOrder.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showSuccess('Thank you for your review! ⭐');
+        setOrderReviews(prev => ({ ...prev, [selectedOrder.id]: data.review }));
+      } else {
+        showError(data.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      showError('Failed to submit review. Please try again.');
+    }
   };
 
   if (loading) {
@@ -261,6 +336,43 @@ export function OrderHistory() {
                         {order.cancelledAt ? `Cancelled on ${formatDate(order.cancelledAt)}` : 'This order has been cancelled'}
                       </p>
                     </div>
+                  ) : order.status === 'COMPLETED' ? (
+                    <div className="mt-4">
+                      {orderReviews[order.id] ? (
+                        <div className="glass rounded-xl p-3 border border-green-500/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="flex gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < orderReviews[order.id].rating
+                                      ? 'fill-orange-500 text-orange-500'
+                                      : 'text-slate-600'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-green-400 font-medium">✓ Reviewed</span>
+                          </div>
+                          {orderReviews[order.id].comment && (
+                            <p className="text-xs text-slate-400 line-clamp-2">
+                              {orderReviews[order.id].comment}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={(e) => handleRateOrder(e, order)}
+                          className="w-full py-2 rounded-xl gradient-orange text-slate-900 text-sm font-bold cursor-pointer flex items-center justify-center gap-2"
+                        >
+                          <Star className="w-4 h-4" />
+                          Rate Order
+                        </motion.button>
+                      )}
+                    </div>
                   ) : canCancelOrder(order.status) ? (
                     <div className="mt-4 flex gap-2">
                       <motion.button
@@ -299,6 +411,17 @@ export function OrderHistory() {
           </div>
         )}
       </div>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => {
+          setReviewModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onSubmit={handleSubmitReview}
+      />
     </div>
   );
 }
