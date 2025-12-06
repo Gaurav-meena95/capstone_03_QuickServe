@@ -33,7 +33,7 @@ export function ReviewModal({ isOpen, onClose, order, onSubmit }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -41,28 +41,28 @@ export function ReviewModal({ isOpen, onClose, order, onSubmit }) {
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="glass rounded-2xl p-6 max-w-md w-full border border-slate-700/50"
+          className="glass rounded-2xl p-4 sm:p-6 max-w-md w-full border border-slate-700/50 my-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white">Rate Your Order</h2>
-              <p className="text-sm text-slate-400">{order?.shop?.name}</p>
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex-1 min-w-0 pr-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white truncate">Rate Your Order</h2>
+              <p className="text-xs sm:text-sm text-slate-400 truncate">{order?.shop?.name}</p>
             </div>
             <motion.button
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.9 }}
               onClick={onClose}
-              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer"
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer flex-shrink-0"
             >
               <X className="w-5 h-5 text-slate-400" />
             </motion.button>
           </div>
 
           {/* Rating Stars */}
-          <div className="mb-6">
-            <p className="text-white mb-3 text-center">How was your experience?</p>
-            <div className="flex justify-center gap-2">
+          <div className="mb-4 sm:mb-6">
+            <p className="text-white mb-3 text-center text-sm sm:text-base">How was your experience?</p>
+            <div className="flex justify-center gap-1 sm:gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <motion.button
                   key={star}
@@ -71,10 +71,10 @@ export function ReviewModal({ isOpen, onClose, order, onSubmit }) {
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   onClick={() => setRating(star)}
-                  className="cursor-pointer"
+                  className="cursor-pointer p-1"
                 >
                   <Star
-                    className={`w-10 h-10 transition-all ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 transition-all ${
                       star <= (hoveredRating || rating)
                         ? "fill-orange-500 text-orange-500"
                         : "text-slate-600"
@@ -99,15 +99,15 @@ export function ReviewModal({ isOpen, onClose, order, onSubmit }) {
           </div>
 
           {/* Comment */}
-          <div className="mb-6">
-            <label className="block text-sm text-slate-300 mb-2">
+          <div className="mb-4 sm:mb-6">
+            <label className="block text-xs sm:text-sm text-slate-300 mb-2">
               Share your feedback (optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Tell us about your experience..."
-              className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none min-h-[100px] resize-none"
+              className="w-full glass rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none min-h-[80px] sm:min-h-[100px] resize-none"
               maxLength={500}
             />
             <p className="text-xs text-slate-500 mt-1 text-right">

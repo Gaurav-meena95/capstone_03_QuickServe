@@ -269,14 +269,15 @@ export function ShopkeeperDashboard() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-6 py-3 rounded-xl text-sm font-medium whitespace-nowrap cursor-pointer flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer flex items-center gap-1.5 sm:gap-2 ${
                 activeTab === tab.key
                   ? 'gradient-orange text-slate-900'
                   : 'glass text-slate-300'
               }`}
             >
-              {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-bold ${
                 activeTab === tab.key
                   ? 'bg-slate-900/30 text-slate-900'
                   : 'bg-slate-700/50 text-slate-400'
@@ -314,14 +315,14 @@ export function ShopkeeperDashboard() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.1 * index }}
                   whileHover={{ y: -5 }}
-                  className={`glass rounded-2xl p-6 cursor-pointer border-2 transition-all ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'glow-orange' : ''
+                  className={`glass rounded-2xl p-4 sm:p-6 cursor-pointer border-2 transition-all ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'glow-orange' : ''
                     } ${getStatusColor(order.status)}`}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-start justify-between mb-4 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
                         <motion.div
-                          className={`text-3xl font-bold ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'text-orange-400' :
+                          className={`text-2xl sm:text-3xl font-bold ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'text-orange-400' :
                               order.status === 'PREPARING' ? 'text-blue-400' :
                                 'text-green-400'
                             }`}
@@ -335,8 +336,8 @@ export function ShopkeeperDashboard() {
                         >
                           #{order.token.split('-')[1] || order.token}
                         </motion.div>
-                        <div className="flex-1">
-                          <p className="text-white font-bold">{order.customer?.name || 'Customer'}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm sm:text-base truncate">{order.customer?.name || 'Customer'}</p>
                           <p className="text-xs text-slate-400">{getTimeAgo(order.placedAt)}</p>
                         </div>
                       </div>
@@ -352,7 +353,7 @@ export function ShopkeeperDashboard() {
                           ]
                         }}
                         transition={{ duration: 1.5, repeat: Infinity }}
-                        className="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold"
+                        className="px-2 sm:px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0"
                       >
                         NEW
                       </motion.div>
@@ -378,9 +379,9 @@ export function ShopkeeperDashboard() {
                           e.stopPropagation();
                           handleUpdateOrderStatus(order.id, 'CONFIRMED');
                         }}
-                        className=" cursor-pointer gradient-orange text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold"
+                        className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
                       >
-                        Accept Order
+                        Accept
                       </button>
                     )}
 
@@ -390,9 +391,9 @@ export function ShopkeeperDashboard() {
                           e.stopPropagation();
                           handleUpdateOrderStatus(order.id, 'PREPARING');
                         }}
-                        className=" cursor-pointer  gradient-orange text-slate-900 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold"
+                        className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
                       >
-                        Start Preparing
+                        Start
                       </button>
                     )}
 
@@ -402,9 +403,9 @@ export function ShopkeeperDashboard() {
                           e.stopPropagation();
                           handleUpdateOrderStatus(order.id, 'READY');
                         }}
-                        className=" cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-9 px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold"
+                        className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
                       >
-                        Mark Ready
+                        Ready
                       </button>
                     )}
 
@@ -414,9 +415,9 @@ export function ShopkeeperDashboard() {
                           e.stopPropagation();
                           handleUpdateOrderStatus(order.id, 'COMPLETED');
                         }}
-                        className=" cursor-pointer  px-4 py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-sm hover:bg-green-500/30"
+                        className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
                       >
-                        Complete Order
+                        Complete
                       </button>
                     )}
                   </div>

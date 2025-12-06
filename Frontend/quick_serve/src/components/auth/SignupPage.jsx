@@ -1,11 +1,13 @@
 import { easeInOut } from "framer-motion";
-import { Lock, Mail, Phone, User, Zap } from "lucide-react";
+import { Lock, Mail, Phone, User, Zap, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion"
 import { Link, useNavigate } from "react-router-dom"
 
 export function SignupPage() {
     const [role, setRole] = useState('CUSTOMER');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [form, setForm] = useState({
         name: '',
         email: '',
@@ -201,27 +203,55 @@ export function SignupPage() {
                                 <label className="text-sm items-center  gap-2 text-slate-300 mb-2 block">
                                     <Lock className="w-4 h-4" />Password
                                 </label>
-                                <input type="password"
-                                    placeholder="••••••••"
-                                    className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                                    name="password"
-                                    required
-                                    value={form.password}
-                                    onChange={handleChange}
-                                />
+                                <div className="relative">
+                                    <input 
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 pr-12 w-full"
+                                        name="password"
+                                        required
+                                        value={form.password}
+                                        onChange={handleChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors"
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className="text-sm items-center gap-2 text-slate-300 mb-2 block">
                                     <Lock className="w-4 h-4" />Confirm Password
                                 </label>
-                                <input type="password"
-                                    placeholder="••••••••"
-                                    className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                                    name="confirmPassword"
-                                    required
-                                    value={form.confirmPassword}
-                                    onChange={handleChange}
-                                />
+                                <div className="relative">
+                                    <input 
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        placeholder="••••••••"
+                                        className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 pr-12 w-full"
+                                        name="confirmPassword"
+                                        required
+                                        value={form.confirmPassword}
+                                        onChange={handleChange}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors"
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="w-5 h-5" />
+                                        ) : (
+                                            <Eye className="w-5 h-5" />
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

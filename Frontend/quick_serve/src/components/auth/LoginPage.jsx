@@ -1,5 +1,5 @@
 import { easeInOut, motion } from "framer-motion"
-import { Zap } from "lucide-react"
+import { Zap, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 
@@ -7,6 +7,7 @@ export function LoginPage() {
     const [role, setRole] = useState('CUSTOMER')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const [form, setForm] = useState({
         email: '',
         password: ''
@@ -138,14 +139,28 @@ export function LoginPage() {
                         </div>
                         <div>
                             <label className="text-sm text-slate-300 mb-2 block">Password</label>
-                            <input type="password"
-                                placeholder="••••••••"
-                                className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
-                                name="password"
-                                value={form.password}
-                                required
-                                onChange={handleChange}
-                            />
+                            <div className="relative">
+                                <input 
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    className="bg-slate-800/50 outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 pr-12 w-full"
+                                    name="password"
+                                    value={form.password}
+                                    required
+                                    onChange={handleChange}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-5 h-5" />
+                                    ) : (
+                                        <Eye className="w-5 h-5" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         {error && <p className="text-red-500 text-sm py-2">{error}</p>}

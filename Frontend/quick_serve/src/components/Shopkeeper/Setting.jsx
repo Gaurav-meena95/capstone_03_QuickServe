@@ -259,47 +259,45 @@ export function SettingsPage() {
           transition={{ delay: 0.2 }}
           className="glass rounded-2xl p-6 mb-6"
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
                 <Clock className="w-6 h-6 text-green-500" />
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Operating Hours</h3>
-                <p className="text-sm text-slate-400">Set your business hours</p>
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-bold text-white">Operating Hours</h3>
+                <p className="text-xs sm:text-sm text-slate-400">Set your business hours</p>
               </div>
             </div>
-            <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+            <div className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full flex items-center gap-2 self-start sm:self-auto ${
               isCurrentlyOpen() ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'
             }`}>
               <div className={`w-2 h-2 rounded-full ${isCurrentlyOpen() ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className={`text-sm font-semibold ${isCurrentlyOpen() ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`text-xs sm:text-sm font-semibold whitespace-nowrap ${isCurrentlyOpen() ? 'text-green-400' : 'text-red-400'}`}>
                 {isCurrentlyOpen() ? 'Currently Open' : 'Currently Closed'}
               </span>
             </div>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-white w-24">Opening</span>
-                <div className="flex items-center gap-2 flex-1">
-                  <input 
-                    type="time" 
-                    name="openingTime"
-                    value={formData.openingTime}
-                    onChange={handleChange}
-                    className="glass rounded-xl px-3 py-2 text-white border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none max-w-[120px]"
-                  />
-                  <span className="text-slate-400">to</span>
-                  <input 
-                    type="time" 
-                    name="closingTime"
-                    value={formData.closingTime}
-                    onChange={handleChange}
-                    className="glass rounded-xl px-3 py-2 text-white border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none max-w-[120px]"
-                  />
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span className="text-white text-sm sm:text-base sm:w-24">Opening Hours</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input 
+                  type="time" 
+                  name="openingTime"
+                  value={formData.openingTime}
+                  onChange={handleChange}
+                  className="glass rounded-xl px-3 py-2 text-white text-sm border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none w-[110px]"
+                />
+                <span className="text-slate-400 text-sm">to</span>
+                <input 
+                  type="time" 
+                  name="closingTime"
+                  value={formData.closingTime}
+                  onChange={handleChange}
+                  className="glass rounded-xl px-3 py-2 text-white text-sm border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none w-[110px]"
+                />
               </div>
             </div>
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
