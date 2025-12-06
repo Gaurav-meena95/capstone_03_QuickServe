@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { ChevronLeft, Clock, CheckCircle, Package, Truck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../Toast";
 
 const statusSteps = [
   { key: 'PENDING', label: 'Order Placed', icon: Clock, color: 'orange' },
@@ -17,6 +19,7 @@ export function OrderTracking() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -93,14 +96,14 @@ export function OrderTracking() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Order cancelled successfully');
+        showSuccess('Order cancelled successfully! 🎉');
         fetchOrder(); // Refresh order data
       } else {
-        alert('Error: ' + data.message);
+        showError(data.message || 'Failed to cancel order');
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('Failed to cancel order');
+      showError('Failed to cancel order. Please try again.');
     } finally {
       setCancelling(false);
     }
@@ -144,6 +147,7 @@ export function OrderTracking() {
 
   return (
     <div className="min-h-screen gradient-bg pb-24">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       {/* Header */}
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center gap-4">

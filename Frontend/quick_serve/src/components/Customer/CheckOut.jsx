@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { ChevronLeft, CreditCard, Clock, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../Toast";
 
 export function Checkout() {
   const navigate = useNavigate();
@@ -9,6 +11,7 @@ export function Checkout() {
   const [orderType, setOrderType] = useState("NOW");
   const [cartData, setCartData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -57,14 +60,17 @@ export function Checkout() {
 
       if (data.success && data.order && data.order.id) {
         localStorage.removeItem('cart');
-        // Navigate to order tracking page
-        navigate(`/customer/order-tracking/${data.order.id}`);
+        showSuccess('Order placed successfully! 🎉');
+        // Navigate to order tracking page after a short delay
+        setTimeout(() => {
+          navigate(`/customer/order-tracking/${data.order.id}`);
+        }, 1000);
       } else {
-        alert('Error: ' + (data.message || 'Failed to create order'));
+        showError(data.message || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      alert('Failed to place order');
+      showError('Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -74,6 +80,7 @@ export function Checkout() {
 
   return (
     <div className="min-h-screen gradient-bg pb-24">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center gap-4">
           <motion.button

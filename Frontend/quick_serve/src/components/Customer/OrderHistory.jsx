@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Clock, CheckCircle, XCircle, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../hooks/useToast";
+import { ToastContainer } from "../Toast";
 
 const statusConfig = {
   PENDING: { color: 'orange', icon: Clock, label: 'Pending' },
@@ -18,6 +20,7 @@ export function OrderHistory() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -104,14 +107,14 @@ export function OrderHistory() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Order cancelled successfully');
+        showSuccess('Order cancelled successfully! 🎉');
         fetchOrders(); // Refresh orders list
       } else {
-        alert('Error: ' + data.message);
+        showError(data.message || 'Failed to cancel order');
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      alert('Failed to cancel order');
+      showError('Failed to cancel order. Please try again.');
     } finally {
       setCancellingOrderId(null);
     }
@@ -131,6 +134,7 @@ export function OrderHistory() {
 
   return (
     <div className="min-h-screen gradient-bg pb-24">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div className="p-6 pt-8">
         {/* Header */}
         <motion.div
