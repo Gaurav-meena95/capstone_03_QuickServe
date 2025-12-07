@@ -13,6 +13,12 @@ async function signup(req, res) {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             return res.status(401).json({ message: "Invalid Email Address" })
         }
+        // Validate phone number - must be exactly 10 digits
+        if (!/^\d{10}$/.test(phone)) {
+            return res.status(400).json({ 
+                message: "Phone number must be exactly 10 digits" 
+            });
+        }
         if (!/(?=.*[!@#$%^&*])(?=.{8,})/.test(password)) {
             return res.status(400).json({
                 message: "Password must be at least 8 characters long and contain one special character"

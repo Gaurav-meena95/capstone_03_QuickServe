@@ -29,6 +29,12 @@ export function SignupPage() {
         e.preventDefault()
         setError('')
         
+        // Validate phone number
+        if (form.phone.length !== 10) {
+            setError('Phone number must be exactly 10 digits')
+            return
+        }
+        
         // Validate password match
         if (form.password !== form.confirmPassword) {
             setError('Passwords do not match')
@@ -187,17 +193,27 @@ export function SignupPage() {
                             </div>
                             <div>
                                 <label className="text-sm flex items-center gap-2 text-slate-300 mb-2 ">
-                                    <Phone className="w-4 h-4" />Phone Number
+                                    <Phone className="w-4 h-4" />Phone Number (10 digits)
                                 </label>
                                 <input
-                                    type="number"
+                                    type="tel"
                                     pattern="[0-9]{10}"
+                                    maxLength="10"
+                                    placeholder="9876543210"
                                     className="bg-slate-800/50  outline-orange-700 text-white placeholder:text-slate-500 rounded-xl h-12 p-2 w-full"
                                     name="phone"
                                     required
                                     value={form.phone}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                        setForm({ ...form, phone: value });
+                                    }}
                                 />
+                                {form.phone && form.phone.length < 10 && (
+                                    <p className="text-xs text-orange-400 mt-1">
+                                        {10 - form.phone.length} more digits required
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="text-sm items-center  gap-2 text-slate-300 mb-2 block">
