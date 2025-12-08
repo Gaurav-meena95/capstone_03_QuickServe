@@ -149,8 +149,8 @@ Frontend (React + Vite) → Backend (Node.js + Express) → Database (PostgreSQL
 ### Order Status Flow:
 ```
 PENDING → CONFIRMED → PREPARING → READY → COMPLETED
-                                        ↓
-                                   CANCELLED
+                  ↓
+              CANCELLED
 ```
 
 ---
