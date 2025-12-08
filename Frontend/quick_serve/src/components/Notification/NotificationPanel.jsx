@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Bell, Check, Trash2, X } from "lucide-react";
-import { fetchWithAuth } from '../utils/api';
+import { fetchWithAuth } from '../../utils/api';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 

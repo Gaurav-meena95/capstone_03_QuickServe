@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Clock, Users, DollarSign, Star } from "lucide-react";
 import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
-import { NotificationPanel } from '../NotificationPanel';
+import { NotificationPanel } from '../Notification/NotificationPanel';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
