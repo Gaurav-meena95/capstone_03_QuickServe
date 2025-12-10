@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Store, Bell, CreditCard, Clock, Save } from "lucide-react";
+import { Store, Bell, CreditCard, Clock, Save, Image, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useShopData } from "../../App";
 
@@ -14,6 +14,13 @@ export function SettingsPage() {
     address: '',
     openingTime: '09:00',
     closingTime: '20:24',
+    logo: null,
+    coverImage: null,
+  });
+
+  const [preview, setPreview] = useState({
+    logo: null,
+    coverImage: null
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -41,6 +48,13 @@ export function SettingsPage() {
         address: shopData.address || '',
         openingTime: shopData.openingTime || '09:00',
         closingTime: shopData.closingTime || '20:24',
+        logo: null,
+        coverImage: null,
+      });
+
+      setPreview({
+        logo: shopData.logo || shopData.logoUrl || null,
+        coverImage: shopData.image || shopData.coverImage || shopData.coverImageUrl || null
       });
     }
   }, [shopData]);
@@ -72,6 +86,81 @@ export function SettingsPage() {
     }));
   };
 
+  const handleImageChange = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setFormData(prev => ({
+      ...prev,
+      [type]: file
+    }));
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(prev => ({
+        ...prev,
+        [type]: reader.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = (type) => {
+    setFormData(prev => ({ ...prev, [type]: null }));
+    setPreview(prev => ({ ...prev, [type]: null }));
+  };
+
+  // Helper function to compress and convert file to base64
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img');
+      
+      img.onload = () => {
+        // Set maximum dimensions
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        let { width, height } = img;
+        
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // Clean up object URL
+        URL.revokeObjectURL(img.src);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = (error) => {
+        URL.revokeObjectURL(img.src);
+        reject(error);
+      };
+      
+      // Create object URL for the image
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -82,6 +171,32 @@ export function SettingsPage() {
         alert('Please login again');
         return;
       }
+
+      // Convert images to base64 if they are File objects
+      let logoBase64 = null;
+      let imageBase64 = null;
+
+      if (formData.logo && formData.logo instanceof File) {
+        logoBase64 = await convertFileToBase64(formData.logo);
+      } else if (preview.logo) {
+        logoBase64 = preview.logo;
+      }
+
+      if (formData.coverImage && formData.coverImage instanceof File) {
+        imageBase64 = await convertFileToBase64(formData.coverImage);
+      } else if (preview.coverImage) {
+        imageBase64 = preview.coverImage;
+      }
+
+      // Prepare payload with images
+      const payload = {
+        ...formData,
+        logo: logoBase64,
+        image: imageBase64,
+      };
+
+      // Remove file objects from payload
+      delete payload.coverImage;
 
       const headers = {
         'Authorization': `JWT ${token}`,
@@ -95,7 +210,7 @@ export function SettingsPage() {
       const response = await fetch(`${backend}/api/shops/me`, {
         method: 'PATCH',
         headers,
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
       const newAccessToken = response.headers.get('x-access-token');
@@ -106,6 +221,10 @@ export function SettingsPage() {
       }
       if (newRefreshToken) {
         localStorage.setItem('refreshToken', newRefreshToken);
+      }
+
+      if (response.status === 413) {
+        throw new Error('Images are too large. Please use smaller images or try again.');
       }
 
       const data = await response.json();
@@ -138,6 +257,9 @@ export function SettingsPage() {
         cuisineType: shop.cuisineType || shop.category || 'Category',
         isOpen: shouldBeOpen,
         status: shouldBeOpen ? 'OPEN' : 'CLOSED',
+        // Ensure images are included in the context
+        logo: shop.logo || logoBase64,
+        image: shop.image || imageBase64,
       };
 
       setShopData(normalizedShop);
@@ -248,6 +370,130 @@ export function SettingsPage() {
                 className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
                 placeholder="Enter full address"
               />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Shop Images */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="glass rounded-2xl p-6 mb-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center">
+              <Image className="w-6 h-6 text-pink-500" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-white">Shop Images</h3>
+              <p className="text-sm text-slate-400">Upload your shop logo and cover image</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Shop Logo */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-3">Shop Logo</label>
+              <motion.div
+                className="relative group"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className={`relative w-full aspect-square rounded-2xl border-2 border-dashed overflow-hidden transition-all ${preview.logo
+                  ? 'border-blue-500/50 glass'
+                  : 'border-slate-600 glass hover:border-green-500/50'
+                  }`}>
+                  {preview.logo ? (
+                    <div className="relative w-full h-full">
+                      <img
+                        src={preview.logo}
+                        alt="Shop Logo"
+                        className="w-full h-full object-cover"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => removeImage('logo')}
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="absolute top-3 right-3 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                      <motion.div
+                        animate={{ y: [0, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Image className="w-16 h-16 mx-auto text-slate-400 mb-3" />
+                      </motion.div>
+                      <p className="text-sm text-slate-300 font-medium">Click to upload logo</p>
+                      <p className="text-xs text-slate-500 mt-2">Square, at least 300x300px</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    name="logo"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, 'logo')}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Cover Image */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-3">Cover Image</label>
+              <motion.div
+                className="relative group"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className={`relative w-full aspect-[16/9] rounded-2xl border-2 border-dashed overflow-hidden transition-all ${preview.coverImage
+                  ? 'border-blue-500/50 glass'
+                  : 'border-slate-600 glass hover:border-green-500/50'
+                  }`}>
+                  {preview.coverImage ? (
+                    <div className="relative w-full h-full">
+                      <img
+                        src={preview.coverImage}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => removeImage('coverImage')}
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="absolute top-3 right-3 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                      <motion.div
+                        animate={{ y: [0, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      >
+                        <Image className="w-16 h-16 mx-auto text-slate-400 mb-3" />
+                      </motion.div>
+                      <p className="text-sm text-slate-300 font-medium">Click to upload cover</p>
+                      <p className="text-xs text-slate-500 mt-2">Landscape, at least 1200x400px</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    name="coverImage"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, 'coverImage')}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </motion.div>
             </div>
           </div>
         </motion.div>

@@ -274,23 +274,35 @@ Shopkeepers can view:
 
 ## 🚀 Deployment
 
+### ✅ Deployment Issues Fixed:
+- Fixed JWT environment variables and CORS configuration
+- Updated production start scripts and build processes
+- Fixed security vulnerabilities in dependencies
+- Added proper environment variable templates
+- Fixed hardcoded URLs for dynamic deployment
+
 ### Backend Deployment (Railway/Render):
 1. Push code to GitHub
 2. Connect repository to Railway/Render
-3. Set environment variables
-4. Deploy
+3. Set environment variables (see DEPLOYMENT.md)
+4. Deploy - build will run `prisma generate` automatically
 
-### Frontend Deployment (Vercel/Netlify):
+### Frontend Deployment (Vercel):
 1. Push code to GitHub
-2. Connect repository to Vercel/Netlify
-3. Set VITE_PUBLIC_BACKEND_URL
-4. Deploy
+2. Connect repository to Vercel
+3. Set `VITE_PUBLIC_BACKEND_URL` environment variable
+4. Deploy - build optimized for production
 
-### Database (Neon/Supabase):
-1. Create PostgreSQL database
-2. Copy connection string
-3. Update DATABASE_URL in backend .env
-4. Run migrations
+### Database (Neon PostgreSQL):
+✅ Already configured and connected
+- SSL-enabled connection string
+- Automatic migrations on deployment
+
+### Verification:
+Run the deployment verification script:
+```bash
+BACKEND_URL=https://your-backend.onrender.com FRONTEND_URL=https://your-frontend.vercel.app node verify-deployment.js
+```
 
 ---
 

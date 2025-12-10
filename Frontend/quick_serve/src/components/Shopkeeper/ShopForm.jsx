@@ -58,8 +58,8 @@ export function ShopForm({ shopData, isEditing = false }) {
       });
 
       setPreview({
-        logo: shopData.logoUrl || null,
-        coverImage: shopData.coverImageUrl || null
+        logo: shopData.logo || shopData.logoUrl || null,
+        coverImage: shopData.image || shopData.coverImage || shopData.coverImageUrl || null
       });
     }
   }, [isEditing, shopData]);
@@ -96,6 +96,57 @@ export function ShopForm({ shopData, isEditing = false }) {
     setPreview(prev => ({ ...prev, [type]: null }));
   };
 
+  // Helper function to compress and convert file to base64
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img');
+      
+      img.onload = () => {
+        // Set maximum dimensions
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        let { width, height } = img;
+        
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // Clean up object URL
+        URL.revokeObjectURL(img.src);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = (error) => {
+        URL.revokeObjectURL(img.src);
+        reject(error);
+      };
+      
+      // Create object URL for the image
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // Added: Handle shop creation/update
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,6 +161,26 @@ export function ShopForm({ shopData, isEditing = false }) {
         throw new Error('No authentication token found. Please login again.');
       }
 
+      // Convert images to base64 if they are File objects
+      let logoBase64 = null;
+      let imageBase64 = null;
+
+      if (formData.logo && formData.logo instanceof File) {
+        logoBase64 = await convertFileToBase64(formData.logo);
+      } else if (preview.logo && !isEditing) {
+        logoBase64 = preview.logo;
+      } else if (isEditing && preview.logo) {
+        logoBase64 = preview.logo;
+      }
+
+      if (formData.coverImage && formData.coverImage instanceof File) {
+        imageBase64 = await convertFileToBase64(formData.coverImage);
+      } else if (preview.coverImage && !isEditing) {
+        imageBase64 = preview.coverImage;
+      } else if (isEditing && preview.coverImage) {
+        imageBase64 = preview.coverImage;
+      }
+
       // Map front-end fields to what backend expects
       const payload = {
         name: formData.name,
@@ -120,6 +191,9 @@ export function ShopForm({ shopData, isEditing = false }) {
         pincode: formData.pincode,
         openingTime: formData.openingTime,
         closingTime: formData.closingTime,
+        // Add image data
+        logo: logoBase64,
+        image: imageBase64,
         // optional extras, backend will ignore if not in schema
         phone: formData.phone,
         email: formData.email,
@@ -160,6 +234,10 @@ export function ShopForm({ shopData, isEditing = false }) {
       }
       if (newRefreshToken) {
         localStorage.setItem('refreshToken', newRefreshToken)
+      }
+
+      if (response.status === 413) {
+        throw new Error('Images are too large. Please use smaller images or try again.');
       }
 
       const data = await response.json();

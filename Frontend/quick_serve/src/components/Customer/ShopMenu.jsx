@@ -151,13 +151,53 @@ export function ShopMenu() {
           >
             <ChevronLeft className="w-6 h-6 text-white" />
           </motion.button>
-          <div className="text-center">
-            <h1 className="font-bold text-white">{shop.name}</h1>
-            <p className="text-xs text-slate-400">{shop.category} • {shop.city}</p>
+          <div className="flex items-center gap-3">
+            {/* Shop Logo/Image */}
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-blue-500/20 flex-shrink-0">
+              {shop.logo || shop.image ? (
+                <img
+                  src={shop.logo || shop.image}
+                  alt={shop.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-orange-400 font-bold text-sm">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="text-center">
+              <h1 className="font-bold text-white">{shop.name}</h1>
+              <p className="text-xs text-slate-400">{shop.category} • {shop.city}</p>
+            </div>
           </div>
           <div className="w-10" />
         </div>
       </div>
+
+      {/* Shop Hero Section */}
+      {shop.image && (
+        <div className="relative h-48 overflow-hidden">
+          <img
+            src={shop.image}
+            alt={shop.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
+          <div className="absolute bottom-4 left-6 right-6">
+            <h2 className="text-2xl font-bold text-white mb-2">{shop.name}</h2>
+            <p className="text-slate-300 text-sm">{shop.description}</p>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="px-2 py-1 bg-orange-500/20 border border-orange-500/50 rounded-lg text-xs text-orange-400">
+                {shop.category}
+              </span>
+              <span className="text-xs text-slate-400">{shop.city}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Menu Items by Category */}
       <div className="p-6 pt-4">

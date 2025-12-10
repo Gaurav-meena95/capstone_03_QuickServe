@@ -169,6 +169,22 @@ export function ShopkeeperDashboard() {
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {/* Shop Logo/Image */}
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-blue-500/20 flex-shrink-0">
+              {shop.logo || shop.image ? (
+                <img
+                  src={shop.logo || shop.image}
+                  alt={shop.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-orange-400 font-bold text-lg">
+                    {shop.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+            </div>
             <div>
               <h1 className="font-bold text-white text-xl">Dashboard</h1>
               <div className="flex items-center gap-2">

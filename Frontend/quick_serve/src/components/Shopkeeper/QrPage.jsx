@@ -6,7 +6,7 @@ import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
-const FRONTEND_URL = "https://capstone-03-quick-serve.vercel.app";
+const FRONTEND_URL = window.location.origin;
 
 export function QRPage() {
   const navigate = useNavigate();

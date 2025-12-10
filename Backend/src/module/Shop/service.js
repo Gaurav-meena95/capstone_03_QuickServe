@@ -209,6 +209,8 @@ exports.getDashboardForUser = async (userId) => {
       pincode: shop.pincode,
       openingTime: shop.openingTime,
       closingTime: shop.closingTime,
+      image: shop.image,
+      logo: shop.logo,
     },
     menuItems: shop.menuItems,
     orders,
