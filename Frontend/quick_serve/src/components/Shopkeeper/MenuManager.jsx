@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 export function MenuManager() {
   const [items, setItems] = useState([]);
@@ -8,6 +8,9 @@ export function MenuManager() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6); // 6 items per page
+  const [searchQuery, setSearchQuery] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -21,6 +24,38 @@ export function MenuManager() {
   });
 
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+
+  // Filter items based on search query
+  const filteredItems = items.filter(item => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(query) ||
+      item.category?.name?.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query) ||
+      item.id.toString().includes(query)
+    );
+  });
+
+  // Pagination logic with safety checks (using filtered items)
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = filteredItems.slice(startIndex, endIndex);
+
+  // Reset to first page when items change or search query changes
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredItems.length, totalPages, currentPage]);
+
+  // Reset to first page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Fetch menu items on component mount
   useEffect(() => {
@@ -326,7 +361,7 @@ export function MenuManager() {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none min-h-[80px] resize-none"
+                      className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none min-h-20 resize-none"
                       placeholder="Optional description..."
                     />
                   </div>
@@ -382,27 +417,64 @@ export function MenuManager() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
         >
           <div className="glass rounded-2xl p-4">
-            <p className="text-slate-400 text-sm mb-1">Total Items</p>
-            <p className="text-3xl font-bold text-white">{items.length}</p>
+            <p className="text-slate-400 text-sm mb-1">
+              {searchQuery ? 'Filtered' : 'Total'} Items
+            </p>
+            <p className="text-3xl font-bold text-white">{filteredItems.length}</p>
+            {totalPages > 1 && (
+              <p className="text-xs text-slate-500 mt-1">Page {safePage}/{totalPages}</p>
+            )}
           </div>
           <div className="glass rounded-2xl p-4">
             <p className="text-slate-400 text-sm mb-1">Available</p>
             <p className="text-3xl font-bold text-green-400">
-              {items.filter(i => i.available).length}
+              {filteredItems.filter(i => i.available).length}
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
             <p className="text-slate-400 text-sm mb-1">Unavailable</p>
             <p className="text-3xl font-bold text-red-400">
-              {items.filter(i => !i.available).length}
+              {filteredItems.filter(i => !i.available).length}
             </p>
           </div>
           <div className="glass rounded-2xl p-4">
             <p className="text-slate-400 text-sm mb-1">Popular</p>
             <p className="text-3xl font-bold text-orange-400">
-              {items.filter(i => i.popular).length}
+              {filteredItems.filter(i => i.popular).length}
             </p>
           </div>
+        </motion.div>
+
+        {/* Search Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-6"
+        >
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, category, description, or item ID..."
+              className="w-full glass rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="text-sm text-slate-400 mt-2">
+              Found {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''} matching "{searchQuery}"
+            </p>
+          )}
         </motion.div>
 
         {/* Loading State */}
@@ -410,20 +482,34 @@ export function MenuManager() {
           <div className="flex items-center justify-center py-20">
             <div className="text-white text-lg">Loading menu items...</div>
           </div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-slate-400 text-lg mb-4">No menu items yet</p>
-            <button
-              onClick={handleAddItem}
-              className="px-6 py-3 gradient-orange rounded-xl text-slate-900 font-bold cursor-pointer"
-            >
-              Add Your First Item
-            </button>
+            {searchQuery ? (
+              <>
+                <p className="text-slate-400 text-lg mb-4">No items found matching "{searchQuery}"</p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-6 py-3 glass rounded-xl text-slate-300 hover:bg-slate-700/50 transition-all font-medium cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-slate-400 text-lg mb-4">No menu items yet</p>
+                <button
+                  onClick={handleAddItem}
+                  className="px-6 py-3 gradient-orange rounded-xl text-slate-900 font-bold cursor-pointer"
+                >
+                  Add Your First Item
+                </button>
+              </>
+            )}
           </div>
         ) : (
           /* Menu Items Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {items.map((item, index) => (
+            {currentItems.map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -441,7 +527,7 @@ export function MenuManager() {
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 to-transparent" />
                   
                   {/* Badges */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
@@ -523,6 +609,157 @@ export function MenuManager() {
               </motion.div>
             ))}
           </div>
+        )}
+
+        {/* Pagination */}
+        {filteredItems.length > itemsPerPage && totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-center justify-center gap-2 mt-8"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                currentPage === 1
+                  ? 'glass text-slate-500 cursor-not-allowed opacity-50'
+                  : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Previous</span>
+            </motion.button>
+            
+            <div className="flex items-center gap-2">
+              {/* Mobile: Show only current page and total */}
+              <div className="sm:hidden">
+                <div className="px-4 py-2 glass rounded-xl">
+                  <span className="text-slate-300 text-sm font-medium">
+                    {safePage} / {totalPages}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Desktop: Show all page numbers (max 7) */}
+              <div className="hidden sm:flex items-center gap-2">
+                {totalPages <= 7 ? (
+                  // Show all pages if 7 or fewer
+                  [...Array(totalPages)].map((_, i) => (
+                    <motion.button
+                      key={i + 1}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-10 h-10 rounded-xl font-medium transition-all ${
+                        safePage === i + 1
+                          ? 'gradient-orange text-slate-900'
+                          : 'glass text-slate-300 hover:bg-slate-700/50'
+                      }`}
+                    >
+                      {i + 1}
+                    </motion.button>
+                  ))
+                ) : (
+                  // Simplified pagination for more than 7 pages
+                  <>
+                    {/* First page */}
+                    {safePage > 2 && (
+                      <>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setCurrentPage(1)}
+                          className="w-10 h-10 rounded-xl font-medium glass text-slate-300 hover:bg-slate-700/50"
+                        >
+                          1
+                        </motion.button>
+                        {safePage > 3 && (
+                          <span className="text-slate-500 px-2">...</span>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Current page and neighbors */}
+                    {[safePage - 1, safePage, safePage + 1].map(pageNum => {
+                      if (pageNum < 1 || pageNum > totalPages) return null;
+                      
+                      return (
+                        <motion.button
+                          key={pageNum}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-10 h-10 rounded-xl font-medium transition-all ${
+                            safePage === pageNum
+                              ? 'gradient-orange text-slate-900'
+                              : 'glass text-slate-300 hover:bg-slate-700/50'
+                          }`}
+                        >
+                          {pageNum}
+                        </motion.button>
+                      );
+                    })}
+                    
+                    {/* Last page */}
+                    {safePage < totalPages - 1 && (
+                      <>
+                        {safePage < totalPages - 2 && (
+                          <span className="text-slate-500 px-2">...</span>
+                        )}
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setCurrentPage(totalPages)}
+                          className="w-10 h-10 rounded-xl font-medium glass text-slate-300 hover:bg-slate-700/50"
+                        >
+                          {totalPages}
+                        </motion.button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                currentPage === totalPages
+                  ? 'glass text-slate-500 cursor-not-allowed opacity-50'
+                  : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
+              }`}
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Pagination Info */}
+        {filteredItems.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-4"
+          >
+            <p className="text-sm text-slate-400">
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} of {filteredItems.length} items
+              {searchQuery && items.length !== filteredItems.length && (
+                <span className="ml-2">• Filtered from {items.length} total</span>
+              )}
+              {totalPages > 1 && (
+                <span className="ml-2">• Page {currentPage} of {totalPages}</span>
+              )}
+            </p>
+          </motion.div>
         )}
       </div>
     </div>

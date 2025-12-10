@@ -1,19 +1,24 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Clock, Users, DollarSign, Star } from "lucide-react";
+import { Clock, Users, DollarSign, Star, RefreshCw, Search, X } from "lucide-react";
 import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '../Notification/NotificationPanel';
+import { useShopData } from '../../App';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
 export function ShopkeeperDashboard() {
   const navigate = useNavigate();
+  const { shopData, setShopData } = useShopData();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'reviews'
   const [reviews, setReviews] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -34,6 +39,15 @@ export function ShopkeeperDashboard() {
 
         const data = await response.json();
         setDashboardData(data);
+        
+        // Update global shop context with latest data including images (only if not already set)
+        if (data.shop && !shopData) {
+          setShopData({
+            ...data.shop,
+            isOpen: data.shop.status === 'OPEN',
+            cuisineType: data.shop.category
+          });
+        }
       } catch (err) {
         console.error('Error fetching dashboard:', err);
         setError('Unable to load dashboard data');
@@ -43,7 +57,35 @@ export function ShopkeeperDashboard() {
     };
 
     fetchDashboard();
-  }, [navigate]);
+  }, [navigate]); // Only depend on navigate, not shopData
+
+  // Manual refresh function
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to refresh dashboard');
+      }
+      
+      const data = await response.json();
+      setDashboardData(data);
+      
+      // Update shop context with latest data
+      if (data.shop) {
+        setShopData({
+          ...data.shop,
+          isOpen: data.shop.status === 'OPEN',
+          cuisineType: data.shop.category
+        });
+      }
+    } catch (err) {
+      console.error('Error refreshing dashboard:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Fetch reviews when reviews tab is active
   useEffect(() => {
@@ -78,7 +120,7 @@ export function ShopkeeperDashboard() {
         throw new Error('Failed to update order status');
       }
 
-      // Refresh dashboard data
+      // Refresh only dashboard data, not shop context
       const dashResponse = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
       const data = await dashResponse.json();
       setDashboardData(data);
@@ -142,7 +184,9 @@ export function ShopkeeperDashboard() {
     );
   }
 
-  const { shop, orders, stats } = dashboardData;
+  const { orders, stats } = dashboardData;
+  // Use global shop data for header (includes latest images from settings)
+  const shop = shopData || dashboardData?.shop;
 
   // Filter active orders (not completed or cancelled)
   const activeOrders = orders.filter(
@@ -153,6 +197,32 @@ export function ShopkeeperDashboard() {
   const completedOrders = orders.filter(
     order => order.status === 'COMPLETED'
   );
+
+  // Filter cancelled orders
+  const cancelledOrders = orders.filter(
+    order => order.status === 'CANCELLED'
+  );
+
+  // Search function to filter orders by token
+  const filterOrdersBySearch = (ordersList) => {
+    if (!searchQuery.trim()) return ordersList;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return ordersList.filter(order => {
+      const token = order.token.toLowerCase();
+      const orderNumber = order.orderNumber?.toLowerCase() || '';
+      const customerName = order.customer?.name?.toLowerCase() || '';
+      
+      return token.includes(query) || 
+             orderNumber.includes(query) || 
+             customerName.includes(query);
+    });
+  };
+
+  // Apply search filter to all order lists
+  const filteredActiveOrders = filterOrdersBySearch(activeOrders);
+  const filteredCompletedOrders = filterOrdersBySearch(completedOrders);
+  const filteredCancelledOrders = filterOrdersBySearch(cancelledOrders);
 
   // Calculate today's revenue
   const today = new Date();
@@ -202,11 +272,70 @@ export function ShopkeeperDashboard() {
               </div>
             </div>
           </div>
-          <NotificationPanel />
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSearch(!showSearch)}
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer hover:bg-slate-700/50 transition-colors"
+            >
+              <Search className="w-5 h-5 text-slate-300" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 text-slate-300 ${refreshing ? 'animate-spin' : ''}`} />
+            </motion.button>
+            <NotificationPanel />
+          </div>
         </div>
       </div>
 
       <div className="p-6">
+        {/* Search Bar */}
+        {showSearch && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6"
+          >
+            <div className="glass rounded-2xl p-4">
+              <div className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by token number, order number, or customer name..."
+                  className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none"
+                />
+                {searchQuery && (
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setSearchQuery('')}
+                    className="w-6 h-6 rounded-full bg-slate-600 hover:bg-slate-500 flex items-center justify-center transition-colors"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </motion.button>
+                )}
+              </div>
+              {searchQuery && (
+                <div className="mt-2 text-xs text-slate-400">
+                  Searching in: {activeTab === 'active' ? 'Active Orders' : 
+                                activeTab === 'completed' ? 'Completed Orders' : 
+                                activeTab === 'cancelled' ? 'Cancelled Orders' : 'Reviews'}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -276,9 +405,30 @@ export function ShopkeeperDashboard() {
           className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide"
         >
           {[
-            { key: 'active', label: 'Active Orders', count: activeOrders.length },
-            { key: 'completed', label: 'Completed Orders', count: completedOrders.length },
-            { key: 'reviews', label: 'Reviews', count: shop.totalRatings },
+            { 
+              key: 'active', 
+              label: 'Active Orders', 
+              count: searchQuery ? filteredActiveOrders.length : activeOrders.length,
+              totalCount: activeOrders.length
+            },
+            { 
+              key: 'completed', 
+              label: 'Completed Orders', 
+              count: searchQuery ? filteredCompletedOrders.length : completedOrders.length,
+              totalCount: completedOrders.length
+            },
+            { 
+              key: 'cancelled', 
+              label: 'Cancelled Orders', 
+              count: searchQuery ? filteredCancelledOrders.length : cancelledOrders.length,
+              totalCount: cancelledOrders.length
+            },
+            { 
+              key: 'reviews', 
+              label: 'Reviews', 
+              count: shop.totalRatings,
+              totalCount: shop.totalRatings
+            },
           ].map((tab) => (
             <motion.button
               key={tab.key}
@@ -313,18 +463,28 @@ export function ShopkeeperDashboard() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Active Orders</h2>
-              <span className="text-sm text-slate-400">{activeOrders.length} orders in queue</span>
+              <div className="text-sm text-slate-400">
+                {searchQuery ? (
+                  <span>{filteredActiveOrders.length} of {activeOrders.length} orders</span>
+                ) : (
+                  <span>{activeOrders.length} orders in queue</span>
+                )}
+              </div>
             </div>
 
-          {activeOrders.length === 0 ? (
+          {filteredActiveOrders.length === 0 ? (
             <div className="glass rounded-2xl p-12 text-center">
               <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400 text-lg">No active orders</p>
-              <p className="text-slate-500 text-sm mt-2">New orders will appear here</p>
+              <p className="text-slate-400 text-lg">
+                {searchQuery ? 'No orders match your search' : 'No active orders'}
+              </p>
+              <p className="text-slate-500 text-sm mt-2">
+                {searchQuery ? 'Try a different search term' : 'New orders will appear here'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {activeOrders.map((order, index) => (
+              {filteredActiveOrders.map((order, index) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -389,52 +549,84 @@ export function ShopkeeperDashboard() {
                       ₹{order.total.toFixed(2)}
                     </span>
 
-                    {order.status === 'PENDING' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUpdateOrderStatus(order.id, 'CONFIRMED');
-                        }}
-                        className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
-                      >
-                        Accept
-                      </button>
-                    )}
 
-                    {order.status === 'CONFIRMED' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUpdateOrderStatus(order.id, 'PREPARING');
-                        }}
-                        className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
-                      >
-                        Start
-                      </button>
-                    )}
-
-                    {order.status === 'PREPARING' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUpdateOrderStatus(order.id, 'READY');
-                        }}
-                        className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
-                      >
-                        Ready
-                      </button>
-                    )}
 
                     {order.status === 'READY' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleUpdateOrderStatus(order.id, 'COMPLETED');
-                        }}
-                        className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
-                      >
-                        Complete
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateOrderStatus(order.id, 'COMPLETED');
+                          }}
+                          className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
+                        >
+                          Complete
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to cancel this order?')) {
+                              handleUpdateOrderStatus(order.id, 'CANCELLED');
+                            }
+                          }}
+                          className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30 whitespace-nowrap"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Cancel button for other statuses */}
+                    {(order.status === 'PENDING' || order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
+                      <div className="flex gap-2">
+                        {order.status === 'PENDING' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateOrderStatus(order.id, 'CONFIRMED');
+                            }}
+                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                          >
+                            Accept
+                          </button>
+                        )}
+
+                        {order.status === 'CONFIRMED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateOrderStatus(order.id, 'PREPARING');
+                            }}
+                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                          >
+                            Start
+                          </button>
+                        )}
+
+                        {order.status === 'PREPARING' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateOrderStatus(order.id, 'READY');
+                            }}
+                            className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                          >
+                            Ready
+                          </button>
+                        )}
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to cancel this order?')) {
+                              handleUpdateOrderStatus(order.id, 'CANCELLED');
+                            }
+                          }}
+                          className="cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -495,17 +687,28 @@ export function ShopkeeperDashboard() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white">Completed Orders</h2>
-              <span className="text-sm text-slate-400">{completedOrders.length} completed</span>
+              <div className="text-sm text-slate-400">
+                {searchQuery ? (
+                  <span>{filteredCompletedOrders.length} of {completedOrders.length} orders</span>
+                ) : (
+                  <span>{completedOrders.length} completed</span>
+                )}
+              </div>
             </div>
 
-            {completedOrders.length === 0 ? (
+            {filteredCompletedOrders.length === 0 ? (
               <div className="glass rounded-2xl p-12 text-center">
                 <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400 text-lg">No completed orders yet</p>
+                <p className="text-slate-400 text-lg">
+                  {searchQuery ? 'No completed orders match your search' : 'No completed orders yet'}
+                </p>
+                {searchQuery && (
+                  <p className="text-slate-500 text-sm mt-2">Try a different search term</p>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {completedOrders.map((order, index) => (
+                {filteredCompletedOrders.map((order, index) => (
                   <motion.div
                     key={order.id}
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -551,6 +754,97 @@ export function ShopkeeperDashboard() {
                         })}
                       </span>
                     </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Cancelled Orders Tab */}
+        {activeTab === 'cancelled' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Cancelled Orders</h2>
+              <div className="text-sm text-slate-400">
+                {searchQuery ? (
+                  <span>{filteredCancelledOrders.length} of {cancelledOrders.length} orders</span>
+                ) : (
+                  <span>{cancelledOrders.length} cancelled</span>
+                )}
+              </div>
+            </div>
+
+            {filteredCancelledOrders.length === 0 ? (
+              <div className="glass rounded-2xl p-12 text-center">
+                <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 text-lg">
+                  {searchQuery ? 'No cancelled orders match your search' : 'No cancelled orders'}
+                </p>
+                <p className="text-slate-500 text-sm mt-2">
+                  {searchQuery ? 'Try a different search term' : 'Cancelled orders will appear here'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredCancelledOrders.map((order, index) => (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.05 * index }}
+                    className="glass rounded-2xl p-6 border border-red-500/30"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="text-2xl font-bold text-red-400">
+                            #{order.token.split('-')[1] || order.token}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-white font-bold">{order.customer?.name || 'Customer'}</p>
+                            <p className="text-xs text-slate-400">{getTimeAgo(order.cancelledAt || order.placedAt)}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full text-xs font-bold text-red-400">
+                        ✕ CANCELLED
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mb-4">
+                      {order.items?.map((item, idx) => (
+                        <p key={idx} className="text-sm text-slate-300">
+                          • {item.menuItem?.name || 'Item'} x{item.quantity}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                      <span className="text-xl font-bold text-white">
+                        ₹{order.total.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(order.cancelledAt || order.placedAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Cancellation reason if available */}
+                    {order.cancellationReason && (
+                      <div className="mt-4 pt-4 border-t border-slate-700/50">
+                        <p className="text-xs text-slate-400 mb-1">Cancellation Reason:</p>
+                        <p className="text-sm text-red-300">{order.cancellationReason}</p>
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </div>
