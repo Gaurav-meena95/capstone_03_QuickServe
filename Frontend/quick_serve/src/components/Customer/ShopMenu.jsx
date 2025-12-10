@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ShoppingCart, Plus, Minus } from "lucide-react";
+import { ChevronLeft, ShoppingCart, Plus, Minus, Search, X, Filter } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export function ShopMenu() {
@@ -9,6 +9,9 @@ export function ShopMenu() {
   const [shop, setShop] = useState(null);
   const [cart, setCart] = useState({});
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name'); // 'name', 'price_low', 'price_high'
+  const [selectedCategory, setSelectedCategory] = useState('all');
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -82,6 +85,50 @@ export function ShopMenu() {
     return Object.values(cart).reduce((sum, qty) => sum + qty, 0);
   };
 
+  // Get all menu items from all categories
+  const getAllMenuItems = () => {
+    if (!shop || !shop.categories) return [];
+    return shop.categories.flatMap(category => 
+      category.menuItems.map(item => ({ ...item, categoryName: category.name, categoryId: category.id }))
+    );
+  };
+
+  // Filter and sort menu items
+  const getFilteredAndSortedItems = () => {
+    let items = getAllMenuItems();
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query) ||
+        item.categoryName.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      items = items.filter(item => item.categoryId === selectedCategory);
+    }
+
+    // Sort items
+    switch (sortBy) {
+      case 'price_low':
+        items.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_high':
+        items.sort((a, b) => b.price - a.price);
+        break;
+      case 'name':
+      default:
+        items.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    return items;
+  };
+
   const handleCheckout = () => {
     const token = localStorage.getItem('accessToken');
     
@@ -153,7 +200,7 @@ export function ShopMenu() {
           </motion.button>
           <div className="flex items-center gap-3">
             {/* Shop Logo/Image */}
-            <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-orange-500/20 to-blue-500/20 flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-linear-to-br from-orange-500/20 to-blue-500/20 shrink-0">
               {shop.logo || shop.image ? (
                 <img
                   src={shop.logo || shop.image}
@@ -177,100 +224,174 @@ export function ShopMenu() {
         </div>
       </div>
 
-      {/* Shop Hero Section */}
-      {shop.image && (
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={shop.image}
-            alt={shop.name}
-            className="w-full h-full object-cover"
+      {/* Search and Filter Section */}
+      <div className="p-4 space-y-4">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search menu items..."
+            className="w-full glass rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
-          <div className="absolute bottom-4 left-6 right-6">
-            <h2 className="text-2xl font-bold text-white mb-2">{shop.name}</h2>
-            <p className="text-slate-300 text-sm">{shop.description}</p>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="px-2 py-1 bg-orange-500/20 border border-orange-500/50 rounded-lg text-xs text-orange-400">
-                {shop.category}
-              </span>
-              <span className="text-xs text-slate-400">{shop.city}</span>
-            </div>
-          </div>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Menu Items by Category */}
-      <div className="p-6 pt-4">
-        {shop.categories && shop.categories.length > 0 ? (
-          shop.categories.map((category) => (
-            <div key={category.id} className="mb-8">
-              <h2 className="text-xl font-bold text-white mb-4">{category.name}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {category.menuItems.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    whileHover={{ y: -5 }}
-                    className="glass rounded-2xl overflow-hidden group"
-                  >
-                    <div className="relative h-48 overflow-hidden bg-gradient-to-br from-orange-500/20 to-blue-500/20">
-                      {item.image && (
-                        <img 
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                        />
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
-                    </div>
-                    
-                    <div className="p-4">
-                      <h3 className="font-bold text-white">{item.name}</h3>
-                      <p className="text-xs text-slate-400 mb-2 line-clamp-2">{item.description}</p>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xl font-bold text-orange-500">₹{item.price}</span>
-                      </div>
+        {/* Filter and Sort Controls */}
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {/* Category Filter */}
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="glass rounded-xl px-4 py-2 text-white bg-transparent border border-slate-700/50 focus:border-orange-500/50 outline-none min-w-32"
+          >
+            <option value="all" className="bg-slate-800">All Categories</option>
+            {shop?.categories?.map(category => (
+              <option key={category.id} value={category.id} className="bg-slate-800">
+                {category.name}
+              </option>
+            ))}
+          </select>
 
-                      {cart[item.id] ? (
-                        <div className="flex items-center gap-3">
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => removeFromCart(item.id)}
-                            className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-orange-500 hover:bg-slate-700 transition-colors cursor-pointer"
-                          >
-                            <Minus className="w-5 h-5" />
-                          </motion.button>
-                          <span className="text-white font-bold flex-1 text-center text-lg">
-                            {cart[item.id]}
-                          </span>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => addToCart(item.id)}
-                            className="w-10 h-10 rounded-xl gradient-orange flex items-center justify-center text-slate-900 glow-orange cursor-pointer"
-                          >
-                            <Plus className="w-5 h-5" />
-                          </motion.button>
-                        </div>
-                      ) : (
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => addToCart(item.id)}
-                          className="w-full h-10 rounded-xl gradient-orange flex items-center justify-center gap-2 text-slate-900 font-bold glow-orange cursor-pointer"
-                        >
-                          <Plus className="w-5 h-5" />
-                          Add
-                        </motion.button>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+          {/* Sort Options */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="glass rounded-xl px-4 py-2 text-white bg-transparent border border-slate-700/50 focus:border-orange-500/50 outline-none min-w-32"
+          >
+            <option value="name" className="bg-slate-800">Name A-Z</option>
+            <option value="price_low" className="bg-slate-800">Price Low-High</option>
+            <option value="price_high" className="bg-slate-800">Price High-Low</option>
+          </select>
+        </div>
+
+        {/* Results Info */}
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-slate-400">
+            {(searchQuery || selectedCategory !== 'all') ? (
+              <>
+                {getFilteredAndSortedItems().length} items found
+                {searchQuery && ` for "${searchQuery}"`}
+              </>
+            ) : (
+              `${getAllMenuItems().length} items available`
+            )}
+          </div>
+          {getTotalItems() > 0 && (
+            <div className="text-orange-400 font-semibold">
+              {getTotalItems()} in cart
             </div>
-          ))
+          )}
+        </div>
+      </div>
+
+      {/* Menu Items Grid - 3 columns */}
+      <div className="px-4 pb-4">
+        {getFilteredAndSortedItems().length > 0 ? (
+          <div className="grid grid-cols-3 gap-3">
+            {getFilteredAndSortedItems().map((item) => (
+              <motion.div
+                key={item.id}
+                whileHover={{ y: -2 }}
+                className="glass rounded-xl overflow-hidden group"
+              >
+                <div className="relative h-24 overflow-hidden bg-linear-to-br from-orange-500/20 to-blue-500/20">
+                  {item.image ? (
+                    <img 
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-2xl text-orange-400">🍽️</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-900/80 to-transparent" />
+                  
+                  {/* Category Badge */}
+                  <div className="absolute top-1 left-1">
+                    <span className="px-1.5 py-0.5 bg-slate-900/80 rounded text-xs text-slate-300 backdrop-blur-sm">
+                      {item.categoryName}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-2">
+                  <h3 className="font-semibold text-white text-sm mb-1 line-clamp-1">{item.name}</h3>
+                  {item.description && (
+                    <p className="text-xs text-slate-400 mb-2 line-clamp-1">{item.description}</p>
+                  )}
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold text-orange-500">₹{item.price}</span>
+                  </div>
+
+                  {cart[item.id] ? (
+                    <div className="flex items-center gap-1">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => removeFromCart(item.id)}
+                        className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-orange-500 hover:bg-slate-700 transition-colors cursor-pointer"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </motion.button>
+                      <span className="text-white font-bold flex-1 text-center text-sm">
+                        {cart[item.id]}
+                      </span>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => addToCart(item.id)}
+                        className="w-7 h-7 rounded-lg gradient-orange flex items-center justify-center text-slate-900 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => addToCart(item.id)}
+                      className="w-full h-7 rounded-lg gradient-orange flex items-center justify-center gap-1 text-slate-900 font-semibold text-xs cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         ) : (
-          <div className="text-center text-slate-400 py-8">No menu items available</div>
+          <div className="text-center text-slate-400 py-12">
+            {searchQuery || selectedCategory !== 'all' ? (
+              <>
+                <p className="text-lg mb-2">No items found</p>
+                <p className="text-sm">Try adjusting your search or filters</p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                  }}
+                  className="mt-3 px-4 py-2 glass rounded-xl text-slate-300 hover:bg-slate-700/50 transition-all cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              </>
+            ) : (
+              <p className="text-lg">No menu items available</p>
+            )}
+          </div>
         )}
       </div>
 

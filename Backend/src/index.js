@@ -33,6 +33,14 @@ const corsOptions = {
 
 app.use(cors(corsOptions))
 app.get('/', (req, res) => res.send("QuickServe API is running ✅"))
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        message: 'QuickServe API is healthy',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    })
+})
 
 app.use('/api/auth',authRoutes )
 app.use('/api/shops',shopRoutes)

@@ -298,10 +298,22 @@ Shopkeepers can view:
 - SSL-enabled connection string
 - Automatic migrations on deployment
 
-### Verification:
-Run the deployment verification script:
+### Live Deployment:
+- **Frontend**: https://capstone-03-quick-serve.vercel.app
+- **Backend**: Deploy using the deployment guide below
+
+### Quick Deploy:
 ```bash
-BACKEND_URL=https://your-backend.onrender.com FRONTEND_URL=https://your-frontend.vercel.app node verify-deployment.js
+# 1. Deploy backend to Render/Railway (see DEPLOYMENT_CHECKLIST.md)
+# 2. Update frontend environment:
+node deploy-helper.js https://your-backend-url.onrender.com
+# 3. Commit and push to trigger Vercel redeploy
+git add . && git commit -m "Configure production" && git push
+```
+
+### Verification:
+```bash
+node verify-deployment.js
 ```
 
 ---
