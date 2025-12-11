@@ -95,8 +95,8 @@ exports.getShopPublic = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
-    const order = await service.updateOrderStatus(req.user.id, orderId, status);
+    const { status, preparationTime } = req.body;
+    const order = await service.updateOrderStatus(req.user.id, orderId, status, preparationTime);
     res.json({ success: true, message: 'Order status updated', order });
   } catch (err) {
     console.error("updateOrderStatus error:", err);

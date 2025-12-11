@@ -17,7 +17,51 @@ export function ShopMenu() {
 
   useEffect(() => {
     fetchShopMenu();
+    loadCartFromStorage();
   }, [slug]);
+
+  // Load cart from localStorage when component mounts
+  const loadCartFromStorage = () => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      if (savedCart) {
+        const parsedCart = JSON.parse(savedCart);
+        // Convert cart items array to cart object for easier manipulation
+        const cartObj = {};
+        if (parsedCart.items && Array.isArray(parsedCart.items)) {
+          parsedCart.items.forEach(item => {
+            cartObj[item.menuItemId] = item.quantity;
+          });
+          setCart(cartObj);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cart from storage:', error);
+      // Clear invalid cart data
+      localStorage.removeItem('cart');
+    }
+  };
+
+  // Save cart to localStorage whenever cart changes
+  useEffect(() => {
+    if (shop && Object.keys(cart).length > 0) {
+      const cartItems = Object.entries(cart).map(([itemId, quantity]) => ({
+        menuItemId: itemId,
+        quantity,
+      }));
+      
+      const cartData = {
+        shopId: shop.id,
+        shopSlug: shop.slug || slug, // Save both ID and slug for flexibility
+        items: cartItems,
+      };
+      
+      localStorage.setItem('cart', JSON.stringify(cartData));
+    } else if (Object.keys(cart).length === 0) {
+      // Clear cart from storage if empty
+      localStorage.removeItem('cart');
+    }
+  }, [cart, shop]);
 
   const fetchShopMenu = async () => {
     try {
@@ -141,6 +185,7 @@ export function ShopMenu() {
       
       localStorage.setItem('cart', JSON.stringify({
         shopId: shop.id,
+        shopSlug: shop.slug || slug, // Save both ID and slug for flexibility
         items: cartItems,
       }));
       
@@ -156,6 +201,7 @@ export function ShopMenu() {
     
     localStorage.setItem('cart', JSON.stringify({
       shopId: shop.id,
+      shopSlug: shop.slug || slug, // Save both ID and slug for flexibility
       items: cartItems,
     }));
     
@@ -164,8 +210,65 @@ export function ShopMenu() {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading menu...</div>
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-6">
+        <div className="text-center">
+          {/* Modern Food Loading Animation */}
+          <div className="relative w-32 h-32 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700/30"></div>
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+            />
+            <motion.div
+              className="absolute inset-3 rounded-full border-3 border-transparent border-r-blue-500"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 360]
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="text-4xl"
+              >
+                🍽️
+              </motion.div>
+            </div>
+          </div>
+          
+          {/* Loading Text */}
+          <motion.div
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <h2 className="text-2xl font-bold text-white mb-2">Loading Menu</h2>
+            <p className="text-slate-400">Fetching delicious items for you...</p>
+          </motion.div>
+          
+          {/* Food Loading Icons */}
+          <div className="flex justify-center gap-4 mt-6">
+            {['🍕', '🍔', '🍜', '🥗'].map((emoji, i) => (
+              <motion.div
+                key={i}
+                className="text-2xl"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity, 
+                  delay: i * 0.3 
+                }}
+              >
+                {emoji}
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

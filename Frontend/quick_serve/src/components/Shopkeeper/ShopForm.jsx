@@ -804,8 +804,22 @@ export function ShopForm({ shopData, isEditing = false }) {
                       ease: "linear"
                     }}
                   />
-                  <span className="relative z-10">
-                    {loading ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Shop' : 'Create Shop')}
+                  <span className="relative z-10 flex items-center gap-2">
+                    {loading ? (
+                      <>
+                        <motion.div
+                          className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        <span>{isEditing ? 'Updating Shop...' : 'Creating Shop...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{isEditing ? '✏️' : '✨'}</span>
+                        <span>{isEditing ? 'Update Shop' : 'Create Shop'}</span>
+                      </>
+                    )}
                   </span>
                 </motion.button>
               </motion.div>

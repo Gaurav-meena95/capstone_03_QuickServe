@@ -208,8 +208,36 @@ export function NotificationPanel() {
               {/* Notifications List */}
               <div className="max-h-[500px] overflow-y-auto">
                 {loading ? (
-                  <div className="p-8 text-center text-slate-400">
-                    Loading notifications...
+                  <div className="p-8 text-center">
+                    {/* Modern Notification Loading */}
+                    <div className="relative w-16 h-16 mx-auto mb-4">
+                      <motion.div
+                        className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                      <motion.div
+                        className="absolute inset-2 rounded-full border-3 border-transparent border-b-blue-500"
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          className="text-2xl"
+                        >
+                          🔔
+                        </motion.div>
+                      </div>
+                    </div>
+                    <motion.p
+                      animate={{ opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-slate-400"
+                    >
+                      Loading notifications...
+                    </motion.p>
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="p-8 text-center">

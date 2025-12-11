@@ -139,8 +139,38 @@ export function EditProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen gradient-bg flex items-center justify-center">
-                <div className="text-white text-xl">Loading profile...</div>
+            <div className="min-h-screen gradient-bg flex items-center justify-center p-6">
+                <div className="text-center">
+                    {/* Modern Profile Loading Animation */}
+                    <div className="relative w-24 h-24 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-slate-700/30"></div>
+                        <motion.div
+                            className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        <motion.div
+                            className="absolute inset-2 rounded-full border-4 border-transparent border-t-orange-500 border-l-orange-500"
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <motion.div
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-orange-500"
+                            />
+                        </div>
+                    </div>
+                    
+                    <motion.div
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                    >
+                        <h2 className="text-2xl font-bold text-white mb-2">Loading Profile</h2>
+                        <p className="text-slate-400">Getting your account details...</p>
+                    </motion.div>
+                </div>
             </div>
         )
     }
@@ -275,12 +305,34 @@ export function EditProfilePage() {
                         Cancel
                     </Button>
                     <Button
-                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-12 bg-orange-600 hover:bg-orange-700 text-white hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
                         onClick={handleSave}
                         disabled={saving}
                     >
-                        <Save className="w-5 h-5 mr-2" />
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving && (
+                            <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                                animate={{ x: [-100, 100] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                        )}
+                        <div className="relative z-10 flex items-center gap-2">
+                            {saving ? (
+                                <>
+                                    <motion.div
+                                        className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                    />
+                                    <span>Saving...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-5 h-5" />
+                                    <span>Save</span>
+                                </>
+                            )}
+                        </div>
                     </Button>
                 </motion.div>
 

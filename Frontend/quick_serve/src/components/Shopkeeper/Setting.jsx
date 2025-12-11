@@ -665,10 +665,32 @@ export function SettingsPage() {
           whileTap={{ scale: 0.98 }}
           onClick={handleSave}
           disabled={loading}
-          className="w-full h-14 gradient-orange glow-orange rounded-xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-14 gradient-orange glow-orange rounded-xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
         >
-          <Save className="w-5 h-5" />
-          {loading ? 'Saving...' : 'Save All Settings'}
+          {loading && (
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+              animate={{ x: [-100, 100] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+          )}
+          <div className="relative z-10 flex items-center gap-2">
+            {loading ? (
+              <>
+                <motion.div
+                  className="w-5 h-5 border-2 border-slate-900/30 border-t-slate-900 rounded-full"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <span>Saving Settings...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                <span>Save All Settings</span>
+              </>
+            )}
+          </div>
         </motion.button>
       </div>
     </div>

@@ -399,9 +399,32 @@ export function MenuManager() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex-1 h-12 gradient-orange rounded-xl text-slate-900 font-bold hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+                      className="flex-1 h-12 gradient-orange rounded-xl text-slate-900 font-bold hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer relative overflow-hidden flex items-center justify-center gap-2"
                     >
-                      {submitting ? 'Saving...' : (editingItem ? 'Update' : 'Add Item')}
+                      {submitting && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                          animate={{ x: [-100, 100] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        />
+                      )}
+                      <div className="relative z-10 flex items-center gap-2">
+                        {submitting ? (
+                          <>
+                            <motion.div
+                              className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            />
+                            <span>Saving...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>{editingItem ? '✏️' : '➕'}</span>
+                            <span>{editingItem ? 'Update' : 'Add Item'}</span>
+                          </>
+                        )}
+                      </div>
                     </button>
                   </div>
                 </form>
@@ -480,7 +503,37 @@ export function MenuManager() {
         {/* Loading State */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="text-white text-lg">Loading menu items...</div>
+            <div className="text-center">
+              {/* Modern Menu Manager Loading */}
+              <div className="relative w-20 h-20 mx-auto mb-4">
+                <motion.div
+                  className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                />
+                <motion.div
+                  className="absolute inset-2 rounded-full border-3 border-transparent border-b-blue-500"
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className="text-2xl"
+                  >
+                    🍽️
+                  </motion.div>
+                </div>
+              </div>
+              <motion.div
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-white text-lg font-semibold"
+              >
+                Loading menu items...
+              </motion.div>
+            </div>
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">

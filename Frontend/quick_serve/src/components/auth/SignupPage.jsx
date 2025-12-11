@@ -276,8 +276,31 @@ export function SignupPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 hover:cursor-pointer">
-                                {loading ? "Creating..." : "Create Account"}
+                                className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 hover:cursor-pointer relative overflow-hidden flex items-center justify-center gap-2">
+                                {loading && (
+                                    <motion.div
+                                        className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                                        animate={{ x: [-100, 100] }}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                    />
+                                )}
+                                <div className="relative z-10 flex items-center gap-2">
+                                    {loading ? (
+                                        <>
+                                            <motion.div
+                                                className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full"
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                            />
+                                            <span>Creating Account...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>✨</span>
+                                            <span>Create Account</span>
+                                        </>
+                                    )}
+                                </div>
                             </button>
                         </motion.div>
                     </form>

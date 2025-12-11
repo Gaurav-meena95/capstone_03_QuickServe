@@ -72,8 +72,33 @@ export function ProfilePage() {
   
   if (loading) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading profile...</div>
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-6">
+        <div className="text-center">
+          {/* Modern Profile Loading Animation */}
+          <div className="relative w-24 h-24 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700/30"></div>
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+              />
+            </div>
+          </div>
+          
+          <motion.div
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <h2 className="text-2xl font-bold text-white mb-2">Loading Profile</h2>
+            <p className="text-slate-400">Getting your account details...</p>
+          </motion.div>
+        </div>
       </div>
     )
   }

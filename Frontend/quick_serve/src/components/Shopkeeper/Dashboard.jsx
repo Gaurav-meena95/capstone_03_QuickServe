@@ -19,6 +19,10 @@ export function ShopkeeperDashboard() {
   const [reviews, setReviews] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showPrepTimeModal, setShowPrepTimeModal] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [preparationTime, setPreparationTime] = useState('');
+  const [orderTimers, setOrderTimers] = useState({});
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -106,14 +110,56 @@ export function ShopkeeperDashboard() {
     fetchReviews();
   }, [activeTab]);
 
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+  // Timer logic for preparing orders
+  useEffect(() => {
+    const intervals = {};
+    
+    if (dashboardData && dashboardData.orders) {
+      const preparingOrders = dashboardData.orders.filter(
+        order => order.status === 'PREPARING' && order.preparationTime && order.preparingAt
+      );
+
+      preparingOrders.forEach(order => {
+        const updateTimer = () => {
+          const now = new Date();
+          const startTime = new Date(order.preparingAt);
+          const endTime = new Date(startTime.getTime() + order.preparationTime * 60000);
+          const remaining = Math.max(0, endTime - now);
+          const remainingSeconds = Math.floor(remaining / 1000);
+          
+          setOrderTimers(prev => ({
+            ...prev,
+            [order.id]: {
+              remaining: remainingSeconds,
+              isOvertime: remaining <= 0,
+              progress: Math.min(100, ((now - startTime) / (order.preparationTime * 60000)) * 100)
+            }
+          }));
+        };
+
+        updateTimer();
+        intervals[order.id] = setInterval(updateTimer, 1000);
+      });
+    }
+
+    return () => {
+      Object.values(intervals).forEach(interval => clearInterval(interval));
+    };
+  }, [dashboardData]);
+
+  const handleUpdateOrderStatus = async (orderId, newStatus, prepTime = null) => {
     try {
+      const payload = { status: newStatus };
+      if (prepTime && newStatus === 'PREPARING') {
+        payload.preparationTime = parseInt(prepTime);
+      }
+
       const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -127,6 +173,24 @@ export function ShopkeeperDashboard() {
     } catch (err) {
       console.error('Error updating order status:', err);
     }
+  };
+
+  const handleStartPreparing = (orderId) => {
+    setSelectedOrderId(orderId);
+    setPreparationTime('');
+    setShowPrepTimeModal(true);
+  };
+
+  const confirmStartPreparing = async () => {
+    if (!preparationTime || preparationTime < 1) {
+      alert('Please enter a valid preparation time (minimum 1 minute)');
+      return;
+    }
+
+    await handleUpdateOrderStatus(selectedOrderId, 'PREPARING', preparationTime);
+    setShowPrepTimeModal(false);
+    setSelectedOrderId(null);
+    setPreparationTime('');
   };
 
   const getTimeAgo = (date) => {
@@ -168,10 +232,72 @@ export function ShopkeeperDashboard() {
     return labels[status] || status;
   };
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen gradient-bg flex items-center justify-center">
-        <div className="text-white text-xl">Loading dashboard...</div>
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-6">
+        <div className="text-center">
+          {/* Modern Circular Loader */}
+          <div className="relative w-28 h-28 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-700/30"></div>
+            <motion.div
+              className="absolute inset-0 rounded-full border-4 border-transparent border-t-orange-500 border-r-orange-500"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            />
+            <motion.div
+              className="absolute inset-2 rounded-full border-4 border-transparent border-t-blue-500 border-l-blue-500"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
+            <motion.div
+              className="absolute inset-4 rounded-full border-4 border-transparent border-b-green-500 border-r-green-500"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-10 h-10 rounded-full bg-gradient-to-r from-orange-500 via-blue-500 to-green-500"
+              />
+            </div>
+          </div>
+          
+          {/* Loading Text */}
+          <motion.div
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <h2 className="text-3xl font-bold text-white mb-2">Loading Dashboard</h2>
+            <p className="text-slate-400">Preparing your shop management interface...</p>
+          </motion.div>
+          
+          {/* Loading Progress Dots */}
+          <div className="flex justify-center gap-3 mt-6">
+            {[0, 1, 2, 3].map((i) => (
+              <motion.div
+                key={i}
+                className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-blue-500"
+                animate={{ 
+                  scale: [1, 1.8, 1], 
+                  opacity: [0.3, 1, 0.3],
+                  y: [0, -10, 0]
+                }}
+                transition={{ 
+                  duration: 1.8, 
+                  repeat: Infinity, 
+                  delay: i * 0.2 
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -282,13 +408,25 @@ export function ShopkeeperDashboard() {
               <Search className="w-5 h-5 text-slate-300" />
             </motion.button>
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: refreshing ? 1 : 1.05 }}
+              whileTap={{ scale: refreshing ? 1 : 0.95 }}
               onClick={handleRefresh}
               disabled={refreshing}
-              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer hover:bg-slate-700/50 transition-colors disabled:opacity-50 relative overflow-hidden"
             >
-              <RefreshCw className={`w-5 h-5 text-slate-300 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"
+                  animate={{ x: [-40, 40] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              )}
+              <motion.div
+                animate={refreshing ? { rotate: 360 } : {}}
+                transition={refreshing ? { duration: 1, repeat: Infinity, ease: "linear" } : {}}
+              >
+                <RefreshCw className="w-5 h-5 text-slate-300" />
+              </motion.div>
             </motion.button>
             <NotificationPanel />
           </div>
@@ -580,27 +718,45 @@ export function ShopkeeperDashboard() {
                     {(order.status === 'PENDING' || order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
                       <div className="flex gap-2">
                         {order.status === 'PENDING' && (
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleUpdateOrderStatus(order.id, 'CONFIRMED');
                             }}
-                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
                           >
-                            Accept
-                          </button>
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                              animate={{ x: [-100, 100] }}
+                              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                            />
+                            <span className="relative z-10 flex items-center gap-1">
+                              ✅ Accept
+                            </span>
+                          </motion.button>
                         )}
 
                         {order.status === 'CONFIRMED' && (
-                          <button
+                          <motion.button
+                            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
+                            whileTap={{ scale: 0.95 }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateOrderStatus(order.id, 'PREPARING');
+                              handleStartPreparing(order.id);
                             }}
-                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(249,115,22,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
                           >
-                            Start
-                          </button>
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                              animate={{ x: [-100, 100] }}
+                              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                            />
+                            <span className="relative z-10 flex items-center gap-1">
+                              🚀 Start
+                            </span>
+                          </motion.button>
                         )}
 
                         {order.status === 'PREPARING' && (
@@ -630,43 +786,67 @@ export function ShopkeeperDashboard() {
                     )}
                   </div>
 
-                  {/* Timer Ring for Preparing Orders */}
-                  {order.status === 'PREPARING' && (
+                  {/* Real-time Countdown Timer for Preparing Orders */}
+                  {order.status === 'PREPARING' && order.preparationTime && order.preparingAt && (
                     <div className="mt-4 pt-4 border-t border-slate-700/50">
                       <div className="flex items-center gap-3">
-                        <div className="relative w-12 h-12">
+                        <div className="relative w-16 h-16">
                           <svg className="w-full h-full -rotate-90">
                             <circle
-                              cx="24"
-                              cy="24"
-                              r="20"
+                              cx="32"
+                              cy="32"
+                              r="28"
                               stroke="rgba(59, 130, 246, 0.2)"
                               strokeWidth="4"
                               fill="none"
                             />
                             <motion.circle
-                              cx="24"
-                              cy="24"
-                              r="20"
-                              stroke="#3b82f6"
+                              cx="32"
+                              cy="32"
+                              r="28"
+                              stroke={orderTimers[order.id]?.isOvertime ? "#f97316" : "#3b82f6"}
                               strokeWidth="4"
                               fill="none"
                               strokeLinecap="round"
-                              initial={{ pathLength: 0 }}
-                              animate={{ pathLength: 0.6 }}
-                              transition={{ duration: 1 }}
+                              animate={{ 
+                                pathLength: (orderTimers[order.id]?.progress || 0) / 100 
+                              }}
+                              transition={{ duration: 0.5 }}
                               style={{
-                                strokeDasharray: "0 1",
+                                strokeDasharray: "175.9",
+                                strokeDashoffset: `${175.9 * (1 - (orderTimers[order.id]?.progress || 0) / 100)}`,
                               }}
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-blue-400" />
+                            <Clock className={`w-6 h-6 ${orderTimers[order.id]?.isOvertime ? 'text-orange-400' : 'text-blue-400'}`} />
                           </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-slate-400">Preparation Time</p>
-                          <p className="text-white font-bold">{getTimeAgo(order.preparingAt || order.placedAt)}</p>
+                        <div className="flex-1">
+                          {orderTimers[order.id] ? (
+                            <>
+                              <p className={`text-xs ${orderTimers[order.id].isOvertime ? 'text-orange-400' : 'text-blue-400'}`}>
+                                {orderTimers[order.id].isOvertime ? 'Overtime' : 'Time Remaining'}
+                              </p>
+                              <p className={`text-lg font-bold ${orderTimers[order.id].isOvertime ? 'text-orange-300' : 'text-white'}`}>
+                                {orderTimers[order.id].isOvertime ? '+' : ''}{formatTime(orderTimers[order.id].remaining)}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                Expected: {order.preparationTime} min
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-xs text-slate-400">Preparation Time</p>
+                              <p className="text-white font-bold">{order.preparationTime} minutes</p>
+                              <p className="text-xs text-slate-500">
+                                Started: {new Date(order.preparingAt).toLocaleTimeString('en-IN', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -934,6 +1114,61 @@ export function ShopkeeperDashboard() {
           </motion.div>
         )}
       </div>
+
+      {/* Preparation Time Modal */}
+      {showPrepTimeModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="glass rounded-2xl p-6 w-full max-w-md"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Set Preparation Time</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              How long will it take to prepare this order?
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Preparation Time (minutes)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={preparationTime}
+                onChange={(e) => setPreparationTime(e.target.value)}
+                placeholder="e.g., 15"
+                className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Enter time in minutes (1-120)
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPrepTimeModal(false);
+                  setSelectedOrderId(null);
+                  setPreparationTime('');
+                }}
+                className="flex-1 h-12 glass rounded-xl text-slate-300 hover:bg-slate-700/50 transition-all font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmStartPreparing}
+                disabled={!preparationTime || preparationTime < 1}
+                className="flex-1 h-12 gradient-orange rounded-xl text-slate-900 font-bold hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                Start Preparing
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

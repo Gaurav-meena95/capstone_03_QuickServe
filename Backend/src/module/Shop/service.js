@@ -307,7 +307,7 @@ exports.getShopWithMenuBySlug = async (slug) => {
   return shop;
 };
 
-exports.updateOrderStatus = async (userId, orderId, status) => {
+exports.updateOrderStatus = async (userId, orderId, status, preparationTime = null) => {
   // Verify shop ownership
   const shop = await prisma.shop.findUnique({
     where: { shopkeeperId: userId },
@@ -329,7 +329,13 @@ exports.updateOrderStatus = async (userId, orderId, status) => {
   const updateData = { status };
   
   if (status === 'CONFIRMED') updateData.confirmedAt = new Date();
-  if (status === 'PREPARING') updateData.preparingAt = new Date();
+  if (status === 'PREPARING') {
+    updateData.preparingAt = new Date();
+    // Add preparation time if provided
+    if (preparationTime && preparationTime > 0) {
+      updateData.preparationTime = preparationTime;
+    }
+  }
   if (status === 'READY') updateData.readyAt = new Date();
   if (status === 'COMPLETED') updateData.completedAt = new Date();
   if (status === 'CANCELLED') updateData.cancelledAt = new Date();

@@ -174,8 +174,31 @@ export function LoginPage() {
                                     }}
                                     type="button"
                                     disabled={loading}
-                                    className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300">
-                                    {loading ? "Logging in..." : "Login as Customer"}
+                                    className="w-full h-12 gradient-orange glow-orange font-semibold text-sm rounded-2xl text-slate-900 hover:shadow-[0_0_30px_rgba(249,115,22,0.6)] transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-2">
+                                    {loading && (
+                                        <motion.div
+                                            className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                                            animate={{ x: [-100, 100] }}
+                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                        />
+                                    )}
+                                    <div className="relative z-10 flex items-center gap-2">
+                                        {loading ? (
+                                            <>
+                                                <motion.div
+                                                    className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full"
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                />
+                                                <span>Logging in...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>🛒</span>
+                                                <span>Login as Customer</span>
+                                            </>
+                                        )}
+                                    </div>
                                 </button>
                             </motion.div>
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -187,8 +210,31 @@ export function LoginPage() {
                                     }}
                                     type="button"
                                     disabled={loading}
-                                    className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1" >
-                                    {loading ? "Logging in..." : 'Login as Shopkeeper'}
+                                    className="w-full h-12 glass border-orange-500/20 text-orange-500 hover:bg-orange-500/10 hover:text-slate-700 rounded-2xl transition-all duration-300 outline-1 relative overflow-hidden flex items-center justify-center gap-2" >
+                                    {loading && (
+                                        <motion.div
+                                            className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-500/20 to-transparent"
+                                            animate={{ x: [-100, 100] }}
+                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                        />
+                                    )}
+                                    <div className="relative z-10 flex items-center gap-2">
+                                        {loading ? (
+                                            <>
+                                                <motion.div
+                                                    className="w-4 h-4 border-2 border-orange-500/30 border-t-orange-500 rounded-full"
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                                />
+                                                <span>Logging in...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>🏪</span>
+                                                <span>Login as Shopkeeper</span>
+                                            </>
+                                        )}
+                                    </div>
                                 </button>
                             </motion.div>
                         </div>
