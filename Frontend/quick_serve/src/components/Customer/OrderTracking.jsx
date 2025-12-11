@@ -1,9 +1,18 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { ChevronLeft, Clock, CheckCircle, Package, Truck } from "lucide-react";
+import { ChevronLeft, Clock, CheckCircle, Package, Truck, Star } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
+import { ReviewModal } from "./ReviewModal";
+import { 
+  calculateTimerState, 
+  getProgressPercentage, 
+  isOrderPreparing,
+  getTimingSummary,
+  formatTimingComparison,
+  getTimingStatus
+} from "../../utils/timerUtils";
 
 const statusSteps = [
   { key: 'PENDING', label: 'Order Placed', icon: Clock, color: 'orange' },
@@ -21,6 +30,9 @@ export function OrderTracking() {
   const [cancelling, setCancelling] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isOvertime, setIsOvertime] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -50,27 +62,15 @@ export function OrderTracking() {
     };
   }, [order]);
 
-  // Countdown timer effect
+  // Countdown timer effect using utility functions
   useEffect(() => {
     let timerInterval;
     
-    if (order && order.status === 'PREPARING' && order.preparationTime && order.preparingAt) {
+    if (isOrderPreparing(order)) {
       const updateTimer = () => {
-        const now = new Date();
-        const startTime = new Date(order.preparingAt);
-        const endTime = new Date(startTime.getTime() + order.preparationTime * 60000);
-        const remaining = Math.max(0, endTime - now);
-        const remainingSeconds = Math.floor(remaining / 1000);
-        
-        if (remaining > 0) {
-          setTimeRemaining(remainingSeconds);
-          setIsOvertime(false);
-        } else {
-          // Calculate overtime
-          const overtime = Math.floor((now - endTime) / 1000);
-          setTimeRemaining(overtime);
-          setIsOvertime(true);
-        }
+        const timerState = calculateTimerState(order);
+        setTimeRemaining(timerState.remaining);
+        setIsOvertime(timerState.isOvertime);
       };
 
       // Update immediately
@@ -115,11 +115,95 @@ export function OrderTracking() {
 
       if (data.success && data.order) {
         setOrder(data.order);
+        
+        // Check if user can review this order when it's completed
+        if (data.order.status === 'COMPLETED') {
+          checkCanReview(data.order.id);
+        }
       }
     } catch (error) {
       console.error('Error fetching order:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkCanReview = async (orderIdToCheck) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      if (!token) return;
+
+      const headers = { 'Authorization': `JWT ${token}` };
+      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+
+      const response = await fetch(`${backend}/api/reviews/order/${orderIdToCheck}/can-review`, { headers });
+      
+      const newAccessToken = response.headers.get('x-access-token');
+      const newRefreshToken = response.headers.get('x-refresh-token');
+      
+      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
+      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCanReview(data.canReview);
+        if (!data.canReview && data.review) {
+          setExistingReview(data.review);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking review status:', error);
+    }
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const headers = {
+        'Authorization': `JWT ${token}`,
+        'Content-Type': 'application/json',
+      };
+      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+
+      const response = await fetch(`${backend}/api/reviews`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          shopId: order.shopId,
+          orderId: order.id,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+        }),
+      });
+
+      const newAccessToken = response.headers.get('x-access-token');
+      const newRefreshToken = response.headers.get('x-refresh-token');
+      
+      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
+      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+
+      const data = await response.json();
+
+      if (data.success) {
+        showSuccess('Thank you for your review! 🌟');
+        setCanReview(false);
+        setExistingReview(data.review);
+      } else {
+        showError(data.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      showError('Failed to submit review. Please try again.');
     }
   };
 
@@ -133,16 +217,10 @@ export function OrderTracking() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getProgressPercentage = () => {
-    if (!order || !order.preparationTime || !order.preparingAt) return 0;
-    
-    const now = new Date();
-    const startTime = new Date(order.preparingAt);
-    const totalTime = order.preparationTime * 60; // in seconds
-    const elapsed = Math.floor((now - startTime) / 1000);
-    
-    if (isOvertime) return 100;
-    return Math.min(100, (elapsed / totalTime) * 100);
+  const getOrderProgressPercentage = () => {
+    if (!isOrderPreparing(order)) return 0;
+    const timerState = calculateTimerState(order);
+    return getProgressPercentage(timerState);
   };
 
   const handleCancelOrder = async () => {
@@ -322,7 +400,7 @@ export function OrderTracking() {
         )}
 
         {/* BIG STOPWATCH COUNTDOWN TIMER */}
-        {order.status === 'PREPARING' && order.preparationTime && order.preparingAt && (
+        {isOrderPreparing(order) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -360,7 +438,7 @@ export function OrderTracking() {
                     fill="none"
                     strokeLinecap="round"
                     initial={{ pathLength: 0 }}
-                    animate={{ pathLength: getProgressPercentage() / 100 }}
+                    animate={{ pathLength: getOrderProgressPercentage() / 100 }}
                     transition={{ duration: 1, ease: "easeInOut" }}
                     style={{
                       filter: `drop-shadow(0 0 10px ${isOvertime ? '#f97316' : '#3b82f6'})`
@@ -594,11 +672,78 @@ export function OrderTracking() {
                 ]
               }}
               transition={{ duration: 1.5, repeat: Infinity }}
-              className="text-5xl font-bold text-green-500 mb-2"
+              className="text-5xl font-bold py-1 rounded-2xl text-green-500 mb-2"
             >
               #{order.token.split('-')[1] || order.token}
             </motion.div>
             <p className="text-sm text-slate-400">Show this token at pickup counter</p>
+          </motion.div>
+        )}
+
+        {/* Order Completed - Rating Section */}
+        {order.status === 'COMPLETED' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass rounded-2xl p-8 text-center border-2 border-green-500/50 bg-green-500/10"
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.05, 1],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-6xl mb-4"
+            >
+              ✅
+            </motion.div>
+            <h2 className="text-3xl font-bold text-green-400 mb-2">Order Completed!</h2>
+            <p className="text-lg text-white mb-6">Thank you for choosing {order.shop.name}</p>
+            
+            {/* Rating Button or Review Status */}
+            {canReview ? (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowReviewModal(true)}
+                className="w-full max-w-sm mx-auto h-14 gradient-orange rounded-2xl font-bold text-slate-900 cursor-pointer flex items-center justify-center gap-3 mb-4"
+              >
+                <Star className="w-6 h-6" />
+                Rate Your Experience
+              </motion.button>
+            ) : existingReview ? (
+              <div className="bg-slate-800/50 rounded-2xl p-4 mb-4 border border-slate-700/50">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-slate-400 text-sm">Your Rating:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= existingReview.rating
+                            ? "fill-orange-500 text-orange-500"
+                            : "text-slate-600"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                {existingReview.comment && (
+                  <p className="text-slate-300 text-sm italic">"{existingReview.comment}"</p>
+                )}
+                <p className="text-xs text-slate-500 mt-2">Thank you for your feedback!</p>
+              </div>
+            ) : (
+              <div className="bg-slate-800/50 rounded-2xl p-4 mb-4 border border-slate-700/50">
+                <p className="text-slate-400 text-sm">Review already submitted</p>
+              </div>
+            )}
+            
+            <motion.div
+              className="text-3xl font-bold text-green-500 mb-2"
+            >
+              #{order.token.split('-')[1] || order.token}
+            </motion.div>
+            <p className="text-sm text-slate-400">Order completed successfully</p>
           </motion.div>
         )}
 
@@ -619,7 +764,7 @@ export function OrderTracking() {
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="text-5xl font-bold text-orange-500 mb-2"
+              className="text-5xl font-bold rounded-2xl py-1 text-orange-500 mb-2"
             >
               {order.token.split('-')[1] || order.token}
             </motion.div>
@@ -702,6 +847,55 @@ export function OrderTracking() {
           </div>
         </motion.div>
 
+        {/* Historical Timing Display for Completed Orders */}
+        {(order.status === 'COMPLETED' || order.status === 'READY') && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="glass rounded-2xl p-6"
+          >
+            <h2 className="font-bold text-white mb-4">Preparation Summary</h2>
+            {(() => {
+              const timingStatus = getTimingStatus(order);
+              const timingComparison = formatTimingComparison(order);
+              
+              return (
+                <div className={`p-4 rounded-xl border ${timingStatus.bgColor} ${timingStatus.borderColor}`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{timingStatus.icon}</span>
+                    <div>
+                      <p className={`font-bold ${timingStatus.color}`}>{timingStatus.label}</p>
+                      <p className="text-sm text-slate-300">{timingComparison}</p>
+                    </div>
+                  </div>
+                  
+                  {(() => {
+                    const summary = getTimingSummary(order);
+                    if (summary.hasTimingData) {
+                      return (
+                        <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-slate-700/50">
+                          <div className="text-center">
+                            <p className="text-xs text-slate-400 mb-1">Estimated</p>
+                            <p className="text-lg font-bold text-white">{summary.estimated} min</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-slate-400 mb-1">Actual</p>
+                            <p className={`text-lg font-bold ${summary.wasOvertime ? 'text-orange-400' : 'text-green-400'}`}>
+                              {summary.actual} min
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              );
+            })()}
+          </motion.div>
+        )}
+
         {/* Order Items */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -760,6 +954,14 @@ export function OrderTracking() {
           </motion.div>
         )}
       </div>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        order={order}
+        onSubmit={handleSubmitReview}
+      />
     </div>
   );
 }

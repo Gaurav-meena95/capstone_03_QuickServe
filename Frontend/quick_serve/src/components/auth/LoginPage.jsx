@@ -194,7 +194,6 @@ export function LoginPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <span>🛒</span>
                                                 <span>Login as Customer</span>
                                             </>
                                         )}
@@ -230,7 +229,6 @@ export function LoginPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <span>🏪</span>
                                                 <span>Login as Shopkeeper</span>
                                             </>
                                         )}

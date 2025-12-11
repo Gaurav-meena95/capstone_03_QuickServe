@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Store, Bell, CreditCard, Clock, Save, Image, X } from "lucide-react";
+import { Store, Clock, Save, Image, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useShopData } from "../../App";
 
@@ -23,18 +23,7 @@ export function SettingsPage() {
     coverImage: null
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    newOrderAlerts: true,
-    orderReadyReminders: true,
-    customerReviews: false,
-    dailySummary: true
-  });
 
-  const [paymentMethods, setPaymentMethods] = useState({
-    card: true,
-    cash: true,
-    digitalWallet: false
-  });
 
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -56,6 +45,8 @@ export function SettingsPage() {
         logo: shopData.logo || shopData.logoUrl || null,
         coverImage: shopData.image || shopData.coverImage || shopData.coverImageUrl || null
       });
+
+
     }
   }, [shopData]);
 
@@ -554,113 +545,13 @@ export function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Notifications */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="glass rounded-2xl p-6 mb-6"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-purple-500" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Notifications</h3>
-              <p className="text-sm text-slate-400">Manage your alerts</p>
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            {[
-              { key: 'newOrderAlerts', label: 'New Order Alerts', desc: 'Get notified for new orders' },
-              { key: 'orderReadyReminders', label: 'Order Ready Reminders', desc: 'Remind when orders are ready' },
-              { key: 'customerReviews', label: 'Customer Reviews', desc: 'Get notified of new reviews' },
-              { key: 'dailySummary', label: 'Daily Summary', desc: 'Receive daily sales report' }
-            ].map((item, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{item.label}</p>
-                  <p className="text-xs text-slate-400">{item.desc}</p>
-                </div>
-                <motion.button
-                  onClick={() => setNotificationSettings(prev => ({
-                    ...prev,
-                    [item.key]: !prev[item.key]
-                  }))}
-                  className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-                    notificationSettings[item.key] ? 'bg-green-500' : 'bg-slate-600'
-                  }`}
-                >
-                  <motion.div
-                    className="bg-white w-6 h-6 rounded-full shadow-lg"
-                    animate={{ x: notificationSettings[item.key] ? 24 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  />
-                </motion.button>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Payment Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass rounded-2xl p-6 mb-6"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-blue-500" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Payment Methods</h3>
-              <p className="text-sm text-slate-400">Accepted payment options</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              { key: 'card', icon: '💳', label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex' },
-              { key: 'cash', icon: '💵', label: 'Cash on Delivery', desc: 'Pay when you collect' },
-              { key: 'digitalWallet', icon: '📱', label: 'Digital Wallets', desc: 'UPI, PhonePe, GPay' }
-            ].map((payment, index) => (
-              <div key={index} className="flex items-center justify-between glass rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                    {payment.icon}
-                  </div>
-                  <div>
-                    <p className="text-white">{payment.label}</p>
-                    <p className="text-xs text-slate-400">{payment.desc}</p>
-                  </div>
-                </div>
-                <motion.button
-                  onClick={() => setPaymentMethods(prev => ({
-                    ...prev,
-                    [payment.key]: !prev[payment.key]
-                  }))}
-                  className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-                    paymentMethods[payment.key] ? 'bg-green-500' : 'bg-slate-600'
-                  }`}
-                >
-                  <motion.div
-                    className="bg-white w-6 h-6 rounded-full shadow-lg"
-                    animate={{ x: paymentMethods[payment.key] ? 24 : 0 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  />
-                </motion.button>
-              </div>
-            ))}
-          </div>
-        </motion.div>
 
         {/* Save Button */}
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0.3 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleSave}

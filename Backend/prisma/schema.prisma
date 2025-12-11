@@ -186,12 +186,13 @@ model Order {
 
   addressId String?
 
-  placedAt    DateTime  @default(now())
-  confirmedAt DateTime?
-  preparingAt DateTime?
-  readyAt     DateTime?
-  completedAt DateTime?
-  cancelledAt DateTime?
+  placedAt       DateTime  @default(now())
+  confirmedAt    DateTime?
+  preparingAt    DateTime?
+  preparationTime Int?     // Estimated preparation time in minutes
+  readyAt        DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
 
   items OrderItem[]
 

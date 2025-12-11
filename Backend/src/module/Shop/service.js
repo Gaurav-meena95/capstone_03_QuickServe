@@ -123,6 +123,8 @@ exports.updateShopByUser = async (userId, payload) => {
         updateData.status = updateData.isOpen ? "OPEN" : "CLOSED";
         delete updateData.isOpen;
     }
+
+
     
     // Remove fields that don't exist in Shop schema
     const invalidFields = ['phone', 'email', 'website', 'deliveryFee', 'minOrderAmount'];
@@ -325,13 +327,20 @@ exports.updateOrderStatus = async (userId, orderId, status, preparationTime = nu
 
   if (!order) throw new Error('Order not found');
 
+  // Validate preparation time if provided
+  if (preparationTime !== null && preparationTime !== undefined) {
+    if (typeof preparationTime !== 'number' || preparationTime < 1 || preparationTime > 120) {
+      throw new Error('Preparation time must be a number between 1 and 120 minutes');
+    }
+  }
+
   // Update order status with timestamps
   const updateData = { status };
   
   if (status === 'CONFIRMED') updateData.confirmedAt = new Date();
   if (status === 'PREPARING') {
     updateData.preparingAt = new Date();
-    // Add preparation time if provided
+    // Add preparation time if provided and valid
     if (preparationTime && preparationTime > 0) {
       updateData.preparationTime = preparationTime;
     }

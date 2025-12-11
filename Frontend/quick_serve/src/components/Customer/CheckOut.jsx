@@ -18,6 +18,13 @@ export function Checkout() {
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
+  // Available payment methods
+  const paymentMethods = [
+    { value: 'CARD', icon: CreditCard, label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex' },
+    { value: 'UPI', icon: '📱', label: 'Digital Wallets', desc: 'UPI, PhonePe, GPay' },
+    { value: 'CASH', icon: '💵', label: 'Cash on Pickup', desc: 'Pay when you collect' },
+  ];
+
   useEffect(() => {
     const cart = localStorage.getItem('cart');
     if (cart) {
@@ -335,11 +342,7 @@ export function Checkout() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass rounded-2xl p-6">
           <h2 className="font-bold text-white mb-4">Payment Method</h2>
           <div className="space-y-3">
-            {[
-              { value: 'CARD', icon: CreditCard, label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex' },
-              { value: 'UPI', icon: '💳', label: 'UPI', desc: 'PhonePe, Google Pay, Paytm' },
-              { value: 'CASH', icon: '💵', label: 'Cash on Pickup', desc: 'Pay when you collect' },
-            ].map((method) => (
+            {paymentMethods.map((method) => (
               <motion.button
                 key={method.value}
                 whileHover={{ scale: 1.01 }}
@@ -385,12 +388,6 @@ export function Checkout() {
           ) : (
             <>
               <span>Place Order</span>
-              <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              >
-                🚀
-              </motion.div>
             </>
           )}
         </motion.button>

@@ -5,6 +5,13 @@ import { fetchWithAuth } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '../Notification/NotificationPanel';
 import { useShopData } from '../../App';
+import { 
+  validatePreparationTime, 
+  calculateTimerState, 
+  formatTime, 
+  getTimerColor,
+  isOrderPreparing 
+} from '../../utils/timerUtils';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -22,6 +29,7 @@ export function ShopkeeperDashboard() {
   const [showPrepTimeModal, setShowPrepTimeModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [preparationTime, setPreparationTime] = useState('');
+  const [preparationTimeError, setPreparationTimeError] = useState('');
   const [orderTimers, setOrderTimers] = useState({});
 
   useEffect(() => {
@@ -110,30 +118,19 @@ export function ShopkeeperDashboard() {
     fetchReviews();
   }, [activeTab]);
 
-  // Timer logic for preparing orders
+  // Timer logic for preparing orders using utility functions
   useEffect(() => {
     const intervals = {};
     
     if (dashboardData && dashboardData.orders) {
-      const preparingOrders = dashboardData.orders.filter(
-        order => order.status === 'PREPARING' && order.preparationTime && order.preparingAt
-      );
+      const preparingOrders = dashboardData.orders.filter(order => isOrderPreparing(order));
 
       preparingOrders.forEach(order => {
         const updateTimer = () => {
-          const now = new Date();
-          const startTime = new Date(order.preparingAt);
-          const endTime = new Date(startTime.getTime() + order.preparationTime * 60000);
-          const remaining = Math.max(0, endTime - now);
-          const remainingSeconds = Math.floor(remaining / 1000);
-          
+          const timerState = calculateTimerState(order);
           setOrderTimers(prev => ({
             ...prev,
-            [order.id]: {
-              remaining: remainingSeconds,
-              isOvertime: remaining <= 0,
-              progress: Math.min(100, ((now - startTime) / (order.preparationTime * 60000)) * 100)
-            }
+            [order.id]: timerState
           }));
         };
 
@@ -178,19 +175,35 @@ export function ShopkeeperDashboard() {
   const handleStartPreparing = (orderId) => {
     setSelectedOrderId(orderId);
     setPreparationTime('');
+    setPreparationTimeError('');
     setShowPrepTimeModal(true);
   };
 
+  const handlePreparationTimeChange = (value) => {
+    setPreparationTime(value);
+    
+    // Validate in real-time
+    const validation = validatePreparationTime(value);
+    setPreparationTimeError(validation.isValid ? '' : validation.error);
+  };
+
   const confirmStartPreparing = async () => {
-    if (!preparationTime || preparationTime < 1) {
-      alert('Please enter a valid preparation time (minimum 1 minute)');
+    const validation = validatePreparationTime(preparationTime);
+    
+    if (!validation.isValid) {
+      setPreparationTimeError(validation.error);
       return;
     }
 
-    await handleUpdateOrderStatus(selectedOrderId, 'PREPARING', preparationTime);
-    setShowPrepTimeModal(false);
-    setSelectedOrderId(null);
-    setPreparationTime('');
+    try {
+      await handleUpdateOrderStatus(selectedOrderId, 'PREPARING', parseInt(preparationTime));
+      setShowPrepTimeModal(false);
+      setSelectedOrderId(null);
+      setPreparationTime('');
+      setPreparationTimeError('');
+    } catch (error) {
+      setPreparationTimeError('Failed to start preparation. Please try again.');
+    }
   };
 
   const getTimeAgo = (date) => {
@@ -787,7 +800,7 @@ export function ShopkeeperDashboard() {
                   </div>
 
                   {/* Real-time Countdown Timer for Preparing Orders */}
-                  {order.status === 'PREPARING' && order.preparationTime && order.preparingAt && (
+                  {isOrderPreparing(order) && (
                     <div className="mt-4 pt-4 border-t border-slate-700/50">
                       <div className="flex items-center gap-3">
                         <div className="relative w-16 h-16">
@@ -819,7 +832,7 @@ export function ShopkeeperDashboard() {
                             />
                           </svg>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Clock className={`w-6 h-6 ${orderTimers[order.id]?.isOvertime ? 'text-orange-400' : 'text-blue-400'}`} />
+                            <Clock className={`w-6 h-6 ${orderTimers[order.id] ? getTimerColor(orderTimers[order.id]) : 'text-blue-400'}`} />
                           </div>
                         </div>
                         <div className="flex-1">
@@ -828,9 +841,15 @@ export function ShopkeeperDashboard() {
                               <p className={`text-xs ${orderTimers[order.id].isOvertime ? 'text-orange-400' : 'text-blue-400'}`}>
                                 {orderTimers[order.id].isOvertime ? 'Overtime' : 'Time Remaining'}
                               </p>
-                              <p className={`text-lg font-bold ${orderTimers[order.id].isOvertime ? 'text-orange-300' : 'text-white'}`}>
+                              <motion.p 
+                                className={`text-lg font-bold ${getTimerColor(orderTimers[order.id])}`}
+                                animate={orderTimers[order.id].isOvertime ? {
+                                  scale: [1, 1.05, 1],
+                                } : {}}
+                                transition={{ duration: 1, repeat: orderTimers[order.id].isOvertime ? Infinity : 0 }}
+                              >
                                 {orderTimers[order.id].isOvertime ? '+' : ''}{formatTime(orderTimers[order.id].remaining)}
-                              </p>
+                              </motion.p>
                               <p className="text-xs text-slate-500">
                                 Expected: {order.preparationTime} min
                               </p>
@@ -849,6 +868,19 @@ export function ShopkeeperDashboard() {
                           )}
                         </div>
                       </div>
+                      
+                      {/* Overtime Alert */}
+                      {orderTimers[order.id]?.isOvertime && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg"
+                        >
+                          <p className="text-xs text-orange-400 font-medium">
+                            🔥 Order is taking longer than expected
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
                   )}
                 </motion.div>
@@ -1137,14 +1169,24 @@ export function ShopkeeperDashboard() {
                 min="1"
                 max="120"
                 value={preparationTime}
-                onChange={(e) => setPreparationTime(e.target.value)}
+                onChange={(e) => handlePreparationTimeChange(e.target.value)}
                 placeholder="e.g., 15"
-                className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
+                className={`w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border transition-all outline-none ${
+                  preparationTimeError 
+                    ? 'border-red-500/50 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20' 
+                    : 'border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20'
+                }`}
                 autoFocus
               />
-              <p className="text-xs text-slate-500 mt-1">
-                Enter time in minutes (1-120)
-              </p>
+              {preparationTimeError ? (
+                <p className="text-xs text-red-400 mt-1">
+                  {preparationTimeError}
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-1">
+                  Enter time in minutes (1-120)
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -1153,6 +1195,7 @@ export function ShopkeeperDashboard() {
                   setShowPrepTimeModal(false);
                   setSelectedOrderId(null);
                   setPreparationTime('');
+                  setPreparationTimeError('');
                 }}
                 className="flex-1 h-12 glass rounded-xl text-slate-300 hover:bg-slate-700/50 transition-all font-medium cursor-pointer"
               >
@@ -1160,7 +1203,7 @@ export function ShopkeeperDashboard() {
               </button>
               <button
                 onClick={confirmStartPreparing}
-                disabled={!preparationTime || preparationTime < 1}
+                disabled={!!preparationTimeError || !preparationTime}
                 className="flex-1 h-12 gradient-orange rounded-xl text-slate-900 font-bold hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
               >
                 Start Preparing

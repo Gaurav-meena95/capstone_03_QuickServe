@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "postinstall": "prisma generate",
@@ -25,6 +26,9 @@
     "nodemon": "^3.1.10"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "fast-check": "^4.4.0",
+    "jest": "^30.2.0",
     "prisma": "^6.18.0"
   }
 }
