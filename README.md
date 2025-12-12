@@ -13,7 +13,7 @@ A QR-based smart ordering & real-time tracking system for restaurants and small 
 - **Password:** `password123!`
 - **Features to Explore:**
   - Browse 5 different restaurants with diverse cuisines
-  - Place orders with real-time preparation timer
+  - Place orders with realtime preparation timer
   - Track orders through all statuses (pending → processing → ready → completed)
   - Rate and review completed orders
   - Manage favorites and order history
@@ -50,55 +50,31 @@ A QR-based smart ordering & real-time tracking system for restaurants and small 
 
 #### **Home Page - Browse Shops**
 ![Customer Home]
+<img width="3024" height="1648" alt="image" src="https://github.com/user-attachments/assets/3f8ae005-16f3-435f-ad00-df9631082ba3" />
 *Browse nearby restaurants with search, filters, and favorites*
 
 #### **Shop Menu - Order Food**
 ![Shop Menu]
-*View menu items, add to cart, and place orders*
+<img width="3024" height="1650" alt="image" src="https://github.com/user-attachments/assets/99c9b934-1f04-4d2c-a1e5-8639a3f2ecca" />
+
 
 #### **Order Tracking - Real-time Updates**
 ![Order Tracking]
-*Track your order with live countdown timer and status updates*
+<img width="3024" height="1634" alt="image" src="https://github.com/user-attachments/assets/e4787e3c-2291-46b6-a529-3beff14c52b0" />
+
 
 ### 🏪 **Shopkeeper Dashboard**
 
 #### **Dashboard - Analytics & Orders**
 ![Shopkeeper Dashboard]
+
+<img width="3024" height="1724" alt="image" src="https://github.com/user-attachments/assets/e92d80d8-fd01-447e-ae30-d3e98aefca65" />
+
 *Manage orders, view analytics, and track performance*
 
 #### **Menu Management**
 ![Menu Management]
-*Add, edit, and manage menu items and categories*
-
----
-
-## 📱 Project Screenshots
-
-### 🏠 **Customer Experience**
-
-#### **Home Page - Browse Shops**
-![Customer Home](https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop)
-*Browse nearby restaurants with search, filters, and favorites*
-
-#### **Shop Menu - Order Food**
-![Shop Menu](https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=400&fit=crop)
-*View menu items, add to cart, and place orders*
-
-#### **Order Tracking - Real-time Updates**
-![Order Tracking](https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=400&fit=crop)
-*Track your order with live countdown timer and status updates*
-
-### 🏪 **Shopkeeper Dashboard**
-
-#### **Dashboard - Analytics & Orders**
-![Shopkeeper Dashboard](https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop)
-*Manage orders, view analytics, and track performance*
-
-#### **Menu Management**
-![Menu Management](https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=400&fit=crop)
-*Add, edit, and manage menu items and categories*
-
----
+<img width="3024" height="1720" alt="image" src="https://github.com/user-attachments/assets/0aaa7f61-66e2-433f-a0ec-2a510537ec1c" />
 
 ## 🏗️ Tech Stack
 
