@@ -51,8 +51,9 @@ export function CustomerHome() {
             const result = await customerAPI.getShops(filters);
 
             if (result.success) {
+                console.log(result.data.pagination)
                 setShops(result.data.shops || []);
-                setTotalPages(result.data.pagination?.totalPages || 1);
+                setTotalPages(result.pagination?.totalPages || 1);
                 
                 // Show notification if using dummy data
                 if (result.fallbackUsed) {

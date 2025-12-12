@@ -77,6 +77,9 @@ export const customerAPI = {
     if (filters.city) queryParams.append('city', filters.city);
     if (filters.category) queryParams.append('category', filters.category);
     if (filters.search) queryParams.append('search', filters.search);
+    if (filters.sortBy) queryParams.append('sortBy', filters.sortBy);
+    if (filters.page) queryParams.append('page', filters.page);
+    if (filters.limit) queryParams.append('limit', filters.limit);
     
     const url = `${backend}/api/customer/shops?${queryParams}`;
     const token = localStorage.getItem('accessToken');
@@ -85,11 +88,7 @@ export const customerAPI = {
       headers: token ? { 'Authorization': `JWT ${token}` } : {}
     };
     
-    const fallbackData = {
-      success: true,
-      shops: getDummyShops(filters),
-      message: "Shops loaded from dummy data"
-    };
+
     
     return await apiWithoutFallback(url, options);
   },

@@ -247,7 +247,7 @@ export function SettingsPage() {
         ...shop,
         cuisineType: shop.cuisineType || shop.category || 'Category',
         isOpen: shouldBeOpen,
-        status: shouldBeOpen ? 'OPEN' : 'CLOSED',
+        status: shouldBeOpen ? 'open' : 'close',
         // Ensure images are included in the context
         logo: shop.logo || logoBase64,
         image: shop.image || imageBase64,

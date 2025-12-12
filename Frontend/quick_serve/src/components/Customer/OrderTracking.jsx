@@ -7,9 +7,9 @@ import { ToastContainer } from "../Toast";
 import { ReviewModal } from "./ReviewModal";
 import { customerAPI, reviewsAPI } from '../../utils/api';
 import { ErrorMessage, ErrorToast } from '../ErrorMessage';
-import { 
-  calculateTimerState, 
-  getProgressPercentage, 
+import {
+  calculateTimerState,
+  getProgressPercentage,
   isOrderPreparing,
   getTimingSummary,
   formatTimingComparison,
@@ -57,7 +57,7 @@ export function OrderTracking() {
         document.title = `Order #${token} - QuickServe`;
       }
     }
-    
+
     // Cleanup: Reset title when component unmounts
     return () => {
       document.title = 'QuickServe';
@@ -67,7 +67,7 @@ export function OrderTracking() {
   // Countdown timer effect using utility functions
   useEffect(() => {
     let timerInterval;
-    
+
     if (isOrderPreparing(order)) {
       const updateTimer = () => {
         const timerState = calculateTimerState(order);
@@ -77,7 +77,7 @@ export function OrderTracking() {
 
       // Update immediately
       updateTimer();
-      
+
       // Update every second
       timerInterval = setInterval(updateTimer, 1000);
     } else {
@@ -106,13 +106,13 @@ export function OrderTracking() {
 
       if (result.success && result.data.order) {
         setOrder(result.data.order);
-        
+
         // Show notification if using dummy data
         if (result.fallbackUsed) {
           setErrorToast('Using offline data - some information may be outdated');
           setTimeout(() => setErrorToast(null), 3000);
         }
-        
+
         // Check if user can review this order when it's completed
         if (result.data.order.status === 'completed') {
           checkCanReview(result.data.order.id);
@@ -147,10 +147,10 @@ export function OrderTracking() {
       if (refreshToken) headers['x-refresh-token'] = refreshToken;
 
       const response = await fetch(`${backend}/api/reviews/order/${orderIdToCheck}/can-review`, { headers });
-      
+
       const newAccessToken = response.headers.get('x-access-token');
       const newRefreshToken = response.headers.get('x-refresh-token');
-      
+
       if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
 
@@ -249,7 +249,7 @@ export function OrderTracking() {
 
       const newAccessToken = response.headers.get('x-access-token');
       const newRefreshToken = response.headers.get('x-refresh-token');
-      
+
       if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
 
@@ -303,7 +303,7 @@ export function OrderTracking() {
               />
             </div>
           </div>
-          
+
           {/* Loading Text */}
           <motion.div
             animate={{ opacity: [0.5, 1, 0.5] }}
@@ -312,7 +312,7 @@ export function OrderTracking() {
             <h2 className="text-2xl font-bold text-white mb-2">Loading Order</h2>
             <p className="text-slate-400">Fetching your order details...</p>
           </motion.div>
-          
+
           {/* Loading Dots */}
           <div className="flex justify-center gap-2 mt-4">
             {[0, 1, 2].map((i) => (
@@ -320,10 +320,10 @@ export function OrderTracking() {
                 key={i}
                 className="w-2 h-2 rounded-full bg-orange-500"
                 animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{ 
-                  duration: 1.5, 
-                  repeat: Infinity, 
-                  delay: i * 0.2 
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2
                 }}
               />
             ))}
@@ -350,7 +350,7 @@ export function OrderTracking() {
             <h1 className="font-bold text-white text-xl">Error</h1>
           </div>
         </div>
-        
+
         <div className="p-6 flex items-center justify-center min-h-[60vh]">
           <ErrorMessage
             error={error.message}
@@ -390,12 +390,12 @@ export function OrderTracking() {
   return (
     <div className="min-h-screen gradient-bg pb-24">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
-      
+
       {/* Error Toast */}
       {errorToast && (
-        <ErrorToast 
-          error={errorToast} 
-          onClose={() => setErrorToast(null)} 
+        <ErrorToast
+          error={errorToast}
+          onClose={() => setErrorToast(null)}
         />
       )}
       {/* Header */}
@@ -433,9 +433,9 @@ export function OrderTracking() {
             </p>
             {order.cancelledAt && (
               <p className="text-xs text-slate-500 mt-2">
-                Cancelled on {new Date(order.cancelledAt).toLocaleDateString('en-IN', { 
-                  day: 'numeric', 
-                  month: 'short', 
+                Cancelled on {new Date(order.cancelledAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
                   year: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit'
@@ -450,20 +450,18 @@ export function OrderTracking() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`glass rounded-3xl p-8 text-center border-4 ${
-              isOvertime 
-                ? 'border-orange-500/70 bg-orange-500/20 glow-orange' 
+            className={`glass rounded-3xl p-8 text-center border-4 ${isOvertime
+                ? 'border-orange-500/70 bg-orange-500/20 glow-orange'
                 : 'border-blue-500/70 bg-blue-500/20 glow-blue'
-            }`}
+              }`}
           >
             {/* Big Stopwatch Circle */}
             <div className="flex items-center justify-center mb-6">
               <div className="relative w-48 h-48 md:w-56 md:h-56">
                 {/* Outer glow ring */}
-                <div className={`absolute inset-0 rounded-full ${
-                  isOvertime ? 'bg-orange-500/20' : 'bg-blue-500/20'
-                } animate-pulse`}></div>
-                
+                <div className={`absolute inset-0 rounded-full ${isOvertime ? 'bg-orange-500/20' : 'bg-blue-500/20'
+                  } animate-pulse`}></div>
+
                 {/* Background circle */}
                 <svg className="w-full h-full -rotate-90">
                   <circle
@@ -491,11 +489,11 @@ export function OrderTracking() {
                     }}
                   />
                 </svg>
-                
+
                 {/* Timer display in center */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <motion.div
-                    animate={{ 
+                    animate={{
                       scale: [1, 1.05, 1],
                       textShadow: [
                         "0 0 20px rgba(255,255,255,0.5)",
@@ -504,7 +502,7 @@ export function OrderTracking() {
                       ]
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="text-6xl md:text-7xl font-bold text-white mb-2"
+                    className="text-6xl md:text-5xl font-bold text-white mb-2"
                   >
                     {formatTime(timeRemaining)}
                   </motion.div>
@@ -517,7 +515,7 @@ export function OrderTracking() {
             <div className="mb-6">
               {isOvertime ? (
                 <>
-                  <motion.h2 
+                  <motion.h2
                     animate={{ scale: [1, 1.02, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                     className="text-2xl md:text-3xl font-bold text-orange-400 mb-3"
@@ -529,7 +527,7 @@ export function OrderTracking() {
                 </>
               ) : (
                 <>
-                  <motion.h2 
+                  <motion.h2
                     animate={{ scale: [1, 1.02, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                     className="text-2xl md:text-3xl font-bold text-blue-400 mb-3"
@@ -542,38 +540,6 @@ export function OrderTracking() {
               )}
             </div>
 
-            {/* Timing Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/50 rounded-2xl border border-slate-700/50">
-              <div className="text-center">
-                <p className="text-purple-400 font-medium text-sm mb-1">Started Preparing</p>
-                <p className="text-white font-bold text-lg">
-                  {new Date(order.preparingAt).toLocaleTimeString('en-IN', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-purple-400 font-medium text-sm mb-1">Expected Ready By</p>
-                <p className="text-white font-bold text-lg">
-                  {new Date(new Date(order.preparingAt).getTime() + order.preparationTime * 60000).toLocaleTimeString('en-IN', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  })}
-                </p>
-              </div>
-            </div>
-
-            {/* Preparation Time Badge */}
-            <div className="mt-4">
-              <span className={`inline-block px-4 py-2 rounded-full text-sm font-bold ${
-                isOvertime 
-                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
-                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
-              }`}>
-                Estimated: {order.preparationTime} minutes
-              </span>
-            </div>
           </motion.div>
         )}
 
@@ -582,71 +548,82 @@ export function OrderTracking() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`glass rounded-2xl p-6 text-center border-2 ${
-              order.status === 'completed' || order.status === 'ready' 
+            className={`glass rounded-2xl p-6 text-center border-2 ${order.status === 'completed' || order.status === 'ready'
                 ? 'border-green-500/50 bg-green-500/10'
-                : order.preparationTime 
+                : order.preparationTime
                   ? 'border-blue-500/50 bg-blue-500/10'
                   : 'border-slate-500/50 bg-slate-500/10'
-            }`}
+              }`}
           >
             <div className="text-4xl mb-3">
-              {order.status === 'completed' || order.status === 'ready' ? '✅' : 
-               order.preparationTime ? '⏱️' : '⏳'}
+              {order.status === 'completed' || order.status === 'ready' ? '✅' :
+                order.preparationTime ? '⏱️' : '⏳'}
             </div>
-            
-            <h3 className={`text-xl font-bold mb-2 ${
-              order.status === 'completed' || order.status === 'ready' ? 'text-green-400' :
-              order.preparationTime ? 'text-blue-400' : 'text-slate-400'
-            }`}>
+
+            <h3 className={`text-xl font-bold mb-2 ${order.status === 'completed' || order.status === 'ready' ? 'text-green-400' :
+                order.preparationTime ? 'text-blue-400' : 'text-slate-400'
+              }`}>
               {order.status === 'completed' || order.status === 'ready' ? 'Preparation Completed' :
-               order.preparationTime ? 'Preparation Time' : 'Preparation Time'}
+                order.preparationTime ? 'Preparation Time' : 'Preparation Time'}
             </h3>
-            
+
             {order.preparationTime ? (
               <>
                 <p className="text-2xl font-bold text-white mb-1">{order.preparationTime} minutes</p>
                 <p className="text-sm text-slate-400">
-                  {order.status === 'completed' || order.status === 'ready' 
+                  {order.status === 'completed' || order.status === 'ready'
                     ? 'Your order was prepared as estimated'
                     : 'Estimated time set by the shopkeeper'}
                 </p>
-                
+
                 {/* Show timing details if available */}
                 {order.preparingAt && (
-                  <div className={`mt-3 p-3 rounded-xl border ${
-                    order.status === 'completed' || order.status === 'ready'
+                  <div className={`mt-3 p-3 rounded-xl border ${order.status === 'completed' || order.status === 'ready'
                       ? 'bg-green-500/10 border-green-500/30'
                       : 'bg-blue-500/10 border-blue-500/30'
-                  }`}>
+                    }`}>
                     {order.readyAt ? (
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-green-400 font-medium">Started</p>
                           <p className="text-white">
-                            {new Date(order.preparingAt).toLocaleTimeString('en-IN', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                            {new Date(order.preparingAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
                             })}
                           </p>
                         </div>
                         <div>
                           <p className="text-green-400 font-medium">Completed</p>
                           <p className="text-white">
-                            {new Date(order.readyAt).toLocaleTimeString('en-IN', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
+                            {new Date(order.readyAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
                             })}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-blue-400">
-                        Started preparing at {new Date(order.preparingAt).toLocaleTimeString('en-IN', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4  rounded-2xl">
+                        <div className="text-center">
+                          <p className="text-purple-400 font-medium text-sm mb-1">Started Preparing</p>
+                          <p className="text-white font-bold text-lg">
+                            {new Date(order.preparingAt).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-purple-400 font-medium text-sm mb-1">Expected Ready By</p>
+                          <p className="text-white font-bold text-lg">
+                            {new Date(new Date(order.preparingAt).getTime() + order.preparationTime * 60000).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -672,16 +649,16 @@ export function OrderTracking() {
             <div className="text-4xl mb-3">📅</div>
             <h3 className="text-xl font-bold text-green-400 mb-2">Scheduled Order</h3>
             <p className="text-lg font-bold text-white mb-1">
-              {new Date(order.scheduledTime).toLocaleDateString('en-IN', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
+              {new Date(order.scheduledTime).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
               })}
             </p>
             <p className="text-xl font-bold text-green-400">
-              {new Date(order.scheduledTime).toLocaleTimeString('en-IN', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              {new Date(order.scheduledTime).toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit'
               })}
             </p>
             <p className="text-sm text-slate-400 mt-2">
@@ -744,7 +721,7 @@ export function OrderTracking() {
             </motion.div>
             <h2 className="text-3xl font-bold text-green-400 mb-2">Order Completed!</h2>
             <p className="text-lg text-white mb-6">Thank you for choosing {order.shop.name}</p>
-            
+
             {/* Rating Button or Review Status */}
             {canReview ? (
               <motion.button
@@ -764,11 +741,10 @@ export function OrderTracking() {
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
-                        className={`w-5 h-5 ${
-                          star <= existingReview.rating
+                        className={`w-5 h-5 ${star <= existingReview.rating
                             ? "fill-orange-500 text-orange-500"
                             : "text-slate-600"
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -783,7 +759,7 @@ export function OrderTracking() {
                 <p className="text-slate-400 text-sm">Review already submitted</p>
               </div>
             )}
-            
+
             <motion.div
               className="text-3xl font-bold text-green-500 mb-2"
             >
@@ -810,7 +786,7 @@ export function OrderTracking() {
                 ]
               }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="text-5xl font-bold rounded-2xl py-1 text-orange-500 mb-2"
+              className="text-5xl font-bold rounded-2xl py-2 text-orange-500 mb-2"
             >
               {order.token.split('-')[1] || order.token}
             </motion.div>
@@ -826,54 +802,53 @@ export function OrderTracking() {
             className="glass rounded-2xl p-6"
           >
             <h2 className="font-bold text-white mb-6">Order Status</h2>
-          <div className="space-y-4">
-            {statusSteps.map((step, index) => {
-              const Icon = step.icon;
-              const isCompleted = index <= currentStatusIndex;
-              const isCurrent = index === currentStatusIndex;
-              
-              return (
-                <div key={step.key} className="flex items-center gap-4">
-                  <motion.div
-                    animate={isCurrent ? {
-                      scale: [1, 1.2, 1],
-                      boxShadow: [
-                        "0 0 0px rgba(249, 115, 22, 0)",
-                        "0 0 20px rgba(249, 115, 22, 0.6)",
-                        "0 0 0px rgba(249, 115, 22, 0)",
-                      ]
-                    } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      isCompleted
-                        ? `gradient-${step.color} glow-${step.color}`
-                        : 'bg-slate-800'
-                    }`}
-                  >
-                    <Icon className={`w-6 h-6 ${isCompleted ? 'text-slate-200' : 'text-slate-500'}`} />
-                  </motion.div>
-                  <div className="flex-1">
-                    <p className={`font-bold ${isCompleted ? 'text-white' : 'text-slate-500'}`}>
-                      {step.label}
-                    </p>
-                    {isCurrent && (
-                      <p className="text-xs text-orange-500">In Progress...</p>
+            <div className="space-y-4">
+              {statusSteps.map((step, index) => {
+                const Icon = step.icon;
+                const isCompleted = index <= currentStatusIndex;
+                const isCurrent = index === currentStatusIndex;
+
+                return (
+                  <div key={step.key} className="flex items-center gap-4">
+                    <motion.div
+                      animate={isCurrent ? {
+                        scale: [1, 1.2, 1],
+                        boxShadow: [
+                          "0 0 0px rgba(249, 115, 22, 0)",
+                          "0 0 20px rgba(249, 115, 22, 0.6)",
+                          "0 0 0px rgba(249, 115, 22, 0)",
+                        ]
+                      } : {}}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${isCompleted
+                          ? `gradient-${step.color} glow-${step.color}`
+                          : 'bg-slate-800'
+                        }`}
+                    >
+                      <Icon className={`w-6 h-6 ${isCompleted ? 'text-slate-200' : 'text-slate-500'}`} />
+                    </motion.div>
+                    <div className="flex-1">
+                      <p className={`font-bold ${isCompleted ? 'text-white' : 'text-slate-500'}`}>
+                        {step.label}
+                      </p>
+                      {isCurrent && (
+                        <p className="text-xs text-orange-500">In Progress...</p>
+                      )}
+                    </div>
+                    {isCompleted && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"
+                      >
+                        <CheckCircle className="w-4 h-4 text-white" />
+                      </motion.div>
                     )}
                   </div>
-                  {isCompleted && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"
-                    >
-                      <CheckCircle className="w-4 h-4 text-white" />
-                    </motion.div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
         )}
 
         {/* Shop Info */}
@@ -905,7 +880,7 @@ export function OrderTracking() {
             {(() => {
               const timingStatus = getTimingStatus(order);
               const timingComparison = formatTimingComparison(order);
-              
+
               return (
                 <div className={`p-4 rounded-xl border ${timingStatus.bgColor} ${timingStatus.borderColor}`}>
                   <div className="flex items-center gap-3 mb-2">
@@ -915,7 +890,7 @@ export function OrderTracking() {
                       <p className="text-sm text-slate-300">{timingComparison}</p>
                     </div>
                   </div>
-                  
+
                   {(() => {
                     const summary = getTimingSummary(order);
                     if (summary.hasTimingData) {

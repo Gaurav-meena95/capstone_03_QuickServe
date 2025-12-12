@@ -447,14 +447,15 @@ export function ShopMenu() {
       <div className="p-4 space-y-4">
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-200" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search menu items..."
-            className="w-full glass rounded-xl pl-10 pr-10 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
+            className="w-full glass rounded-xl pl-10 pr-10 py-3 bg-transparent text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
           />
+          
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
@@ -506,8 +507,9 @@ export function ShopMenu() {
             )}
           </div>
           {getTotalItems() > 0 && (
-            <div className="text-orange-400 font-semibold">
-              {getTotalItems()} in cart
+            <div className=" font-semibold h-10 w-15 rounded-2xl bg-orange-400 flex items-center justify-center">
+                <ShoppingCart className="w-6 h-6 text-slate-900" /> 
+              {getTotalItems()} 
             </div>
           )}
         </div>
@@ -516,14 +518,14 @@ export function ShopMenu() {
       {/* Menu Items Grid - 3 columns */}
       <div className="px-4 pb-4">
         {getFilteredAndSortedItems().length > 0 ? (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="flex items-center justify-center my-5 gap-10 flex-wrap ">
             {getFilteredAndSortedItems().map((item) => (
               <motion.div
                 key={item.id}
                 whileHover={{ y: -2 }}
-                className="glass rounded-xl overflow-hidden group"
+                className="glass rounded-xl overflow-hidden group w-82 h-75"
               >
-                <div className="relative h-24 overflow-hidden bg-linear-to-br from-orange-500/20 to-blue-500/20">
+                <div className="relative h-43  overflow-hidden bg-linear-to-br from-orange-500/20 to-blue-500/20">
                   {item.image ? (
                     <img 
                       src={item.image}
@@ -532,7 +534,7 @@ export function ShopMenu() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-2xl text-orange-400">🍽️</span>
+                      <span className="text-9xl text-orange-400">🍽️</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-linear-to-t from-slate-900/80 to-transparent" />
@@ -545,7 +547,7 @@ export function ShopMenu() {
                   </div>
                 </div>
                 
-                <div className="p-2">
+                <div className="p-3">
                   <h3 className="font-semibold text-white text-sm mb-1 line-clamp-1">{item.name}</h3>
                   {item.description && (
                     <p className="text-xs text-slate-400 mb-2 line-clamp-1">{item.description}</p>

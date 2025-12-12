@@ -399,13 +399,13 @@ export function ShopkeeperDashboard() {
               <div className="flex items-center gap-2">
                 <p className="text-xs text-slate-400">{shop.name}</p>
                 <span className="text-slate-600">•</span>
-                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${shop.status === 'OPEN' ? 'bg-green-500/20' : 'bg-red-500/20'
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${shop.status === 'open' ? 'bg-green-500/20' : 'bg-red-500/20'
                   }`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${shop.status === 'OPEN' ? 'bg-green-500' : 'bg-red-500'
+                  <div className={`w-1.5 h-1.5 rounded-full ${shop.status === 'open' ? 'bg-green-500' : 'bg-red-500'
                     }`} />
-                  <span className={`text-xs font-semibold ${shop.status === 'OPEN' ? 'text-green-400' : 'text-red-400'
+                  <span className={`text-xs font-semibold ${shop.status === 'open' ? 'text-green-400' : 'text-red-400'
                     }`}>
-                    {shop.status === 'OPEN' ? 'Open' : 'Closed'}
+                    {shop.status === 'open' ? 'Open' : 'Closed'}
                   </span>
                 </div>
               </div>
