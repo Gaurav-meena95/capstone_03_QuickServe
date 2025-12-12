@@ -4,6 +4,8 @@ import { ChevronLeft, CreditCard, Clock, Zap, Plus, Minus, Trash2 } from "lucide
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
+import { ErrorMessage, InlineError } from "../ErrorMessage";
+import { customerAPI } from '../../utils/api';
 
 export function Checkout() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [shopData, setShopData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -49,14 +52,14 @@ export function Checkout() {
       // Fetch shop details to get menu items using shop slug from cart
       const shopSlug = cart.shopSlug || cart.shopId; // Try slug first, fallback to ID
       console.log('Fetching shop with slug/id:', shopSlug); // Debug log
-      const response = await fetch(`${backend}/api/customer/shops/${shopSlug}`, { headers });
-      const data = await response.json();
+      
+      const result = await customerAPI.getShopBySlug(shopSlug);
 
-      if (data.success && data.shop) {
-        setShopData(data.shop);
+      if (result.success && result.data.shop) {
+        setShopData(result.data.shop);
         
         // Map cart items with full details
-        const allMenuItems = data.shop.categories.flatMap(cat => cat.menuItems);
+        const allMenuItems = result.data.shop.categories.flatMap(cat => cat.menuItems);
         const itemsWithDetails = cart.items.map(cartItem => {
           const menuItem = allMenuItems.find(item => item.id === cartItem.menuItemId);
           return {
@@ -68,6 +71,9 @@ export function Checkout() {
         
         console.log('Cart items with details:', itemsWithDetails); // Debug log
         setCartItems(itemsWithDetails);
+      } else {
+        console.error('Failed to fetch shop details:', result.error);
+        showError('Failed to load shop details');
       }
     } catch (error) {
       console.error('Error fetching cart details:', error);
@@ -135,12 +141,13 @@ export function Checkout() {
 
     // Validate scheduled time if order type is SCHEDULED
     if (orderType === 'SCHEDULED' && !scheduledTime) {
-      showError('Please select a scheduled time');
+      setError('Please select a scheduled time');
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
 
@@ -163,33 +170,21 @@ export function Checkout() {
         orderPayload.scheduledTime = scheduledTime;
       }
 
-      const response = await fetch(`${backend}/api/customer/orders`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(orderPayload),
-      });
+      const result = await customerAPI.placeOrder(orderPayload);
 
-      const newAccessToken = response.headers.get('x-access-token');
-      const newRefreshToken = response.headers.get('x-refresh-token');
-      
-      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-
-      const data = await response.json();
-
-      if (data.success && data.order && data.order.id) {
+      if (result.success && result.data.order && result.data.order.id) {
         localStorage.removeItem('cart');
         showSuccess('Order placed successfully! 🎉');
         // Navigate to order tracking page after a short delay
         setTimeout(() => {
-          navigate(`/customer/order-tracking/${data.order.id}`);
+          navigate(`/customer/order-tracking/${result.data.order.id}`);
         }, 1000);
       } else {
-        showError(data.message || 'Failed to create order');
+        throw new Error(result.error || 'Failed to create order');
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      showError('Failed to place order. Please try again.');
+      setError(error.message || 'Failed to place order. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -368,6 +363,11 @@ export function Checkout() {
             ))}
           </div>
         </motion.div>
+
+        {/* Error Display */}
+        {error && (
+          <InlineError error={error} className="mb-4" />
+        )}
 
         <motion.button
           whileHover={{ scale: loading ? 1 : 1.02 }}

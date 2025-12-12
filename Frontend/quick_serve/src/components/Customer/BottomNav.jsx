@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Home, ShoppingBag, Clock, User } from "lucide-react";
+import { Home, ShoppingBag, Clock, User, Heart } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const navItems = [
   { id: 'home', icon: Home, label: 'Home', path: '/customer/home' },
+  { id: 'favorites', icon: Heart, label: 'Favorites', path: '/customer/favorites' },
   { id: 'orders', icon: Clock, label: 'Orders', path: '/customer/orders' },
   { id: 'profile', icon: User, label: 'Profile', path: '/customer/profile' },
 ];

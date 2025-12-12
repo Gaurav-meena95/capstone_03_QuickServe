@@ -9,7 +9,11 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "postinstall": "prisma generate",
-    "build": "prisma generate"
+    "build": "prisma generate",
+    "seed:data": "node scripts/seed.js seed",
+    "seed:clear": "node scripts/seed.js clear",
+    "seed:reset": "node scripts/seed.js reset",
+    "verify:demo": "node scripts/verify-demo.js"
   },
   "keywords": [],
   "author": "",

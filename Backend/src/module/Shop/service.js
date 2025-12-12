@@ -47,7 +47,7 @@ exports.createShopForUser = async (userId, payload) => {
             state: payload.state || null,
             openingTime: payload.openingTime || "09:00",
             closingTime: payload.closingTime || "22:00",
-            status: payload.isOpen === false ? "CLOSED" : "OPEN",  // Fix: check isOpen properly
+            status: payload.isOpen === false ? "closed" : "open",  // Fix: check isOpen properly
             shopkeeperId: userId,
         }
     })
@@ -88,7 +88,7 @@ exports.getShopbyUserId = async (userId) => {
     if (shop) {
         // Auto-update status based on operating hours
         const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
-        const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+        const newStatus = shouldBeOpen ? 'open' : 'closed';
         
         // Update status if it doesn't match
         if (shop.status !== newStatus) {
@@ -120,7 +120,7 @@ exports.updateShopByUser = async (userId, payload) => {
     
     // Convert isOpen boolean to status enum
     if (updateData.isOpen !== undefined) {
-        updateData.status = updateData.isOpen ? "OPEN" : "CLOSED";
+        updateData.status = updateData.isOpen ? "open" : "closed";
         delete updateData.isOpen;
     }
 
@@ -173,7 +173,7 @@ exports.getDashboardForUser = async (userId) => {
 
   // Auto-update status based on operating hours
   const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
-  const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+  const newStatus = shouldBeOpen ? 'open' : 'closed';
   
   if (shop.status !== newStatus) {
     await prisma.shop.update({
@@ -187,12 +187,12 @@ exports.getDashboardForUser = async (userId) => {
 
   const stats = {
     totalOrders: orders.length,
-    pending: orders.filter((o) => o.status === "PENDING").length,
-    confirmed: orders.filter((o) => o.status === "CONFIRMED").length,
-    preparing: orders.filter((o) => o.status === "PREPARING").length,
-    ready: orders.filter((o) => o.status === "READY").length,
-    completed: orders.filter((o) => o.status === "COMPLETED").length,
-    cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+    pending: orders.filter((o) => o.status === "pending").length,
+    confirmed: orders.filter((o) => o.status === "confirmed").length,
+    preparing: orders.filter((o) => o.status === "processing").length,
+    ready: orders.filter((o) => o.status === "ready").length,
+    completed: orders.filter((o) => o.status === "completed").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
     rating: shop.rating,
     totalRatings: shop.totalRatings,
     totalMenuItems: shop.menuItems.length,
@@ -254,7 +254,7 @@ exports.getAllOpenShops = async ({ city, category }) => {
   
   for (const shop of shops) {
     const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
-    const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+    const newStatus = shouldBeOpen ? 'open' : 'closed';
     
     // Update status if needed
     if (shop.status !== newStatus) {
@@ -266,7 +266,7 @@ exports.getAllOpenShops = async ({ city, category }) => {
     }
     
     // Only include open shops
-    if (shop.status === 'OPEN') {
+    if (shop.status === 'open') {
       // Remove openingTime and closingTime from response
       const { openingTime, closingTime, ...shopData } = shop;
       openShops.push(shopData);
@@ -296,7 +296,7 @@ exports.getShopWithMenuBySlug = async (slug) => {
 
   // Auto-update status based on operating hours
   const shouldBeOpen = isWithinOperatingHours(shop.openingTime, shop.closingTime);
-  const newStatus = shouldBeOpen ? 'OPEN' : 'CLOSED';
+  const newStatus = shouldBeOpen ? 'open' : 'closed';
   
   if (shop.status !== newStatus) {
     await prisma.shop.update({
@@ -337,17 +337,17 @@ exports.updateOrderStatus = async (userId, orderId, status, preparationTime = nu
   // Update order status with timestamps
   const updateData = { status };
   
-  if (status === 'CONFIRMED') updateData.confirmedAt = new Date();
-  if (status === 'PREPARING') {
+  if (status === 'confirmed') updateData.confirmedAt = new Date();
+  if (status === 'processing') {
     updateData.preparingAt = new Date();
     // Add preparation time if provided and valid
     if (preparationTime && preparationTime > 0) {
       updateData.preparationTime = preparationTime;
     }
   }
-  if (status === 'READY') updateData.readyAt = new Date();
-  if (status === 'COMPLETED') updateData.completedAt = new Date();
-  if (status === 'CANCELLED') updateData.cancelledAt = new Date();
+  if (status === 'ready') updateData.readyAt = new Date();
+  if (status === 'completed') updateData.completedAt = new Date();
+  if (status === 'cancelled') updateData.cancelledAt = new Date();
 
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
@@ -371,11 +371,11 @@ exports.updateOrderStatus = async (userId, orderId, status, preparationTime = nu
   // Create notification for status change
   const notificationService = require('../Notification/service');
   const notificationTypes = {
-    'CONFIRMED': 'ORDER_CONFIRMED',
-    'PREPARING': 'ORDER_PREPARING',
-    'READY': 'ORDER_READY',
-    'COMPLETED': 'ORDER_COMPLETED',
-    'CANCELLED': 'ORDER_CANCELLED'
+    'confirmed': 'ORDER_CONFIRMED',
+    'processing': 'ORDER_PREPARING',
+    'ready': 'ORDER_READY',
+    'completed': 'ORDER_COMPLETED',
+    'cancelled': 'ORDER_CANCELLED'
   };
   
   if (notificationTypes[status]) {

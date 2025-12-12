@@ -5,6 +5,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
 import { ReviewModal } from "./ReviewModal";
+import { customerAPI, reviewsAPI } from '../../utils/api';
+import { ErrorMessage, ErrorToast } from '../ErrorMessage';
 import { 
   calculateTimerState, 
   getProgressPercentage, 
@@ -15,11 +17,11 @@ import {
 } from "../../utils/timerUtils";
 
 const statusSteps = [
-  { key: 'PENDING', label: 'Order Placed', icon: Clock, color: 'orange' },
-  { key: 'CONFIRMED', label: 'Confirmed', icon: CheckCircle, color: 'blue' },
-  { key: 'PREPARING', label: 'Preparing', icon: Package, color: 'purple' },
-  { key: 'READY', label: 'Ready for Pickup', icon: Truck, color: 'green' },
-  { key: 'COMPLETED', label: 'Completed', icon: CheckCircle, color: 'green' },
+  { key: 'pending', label: 'Order Placed', icon: Clock, color: 'orange' },
+  { key: 'confirmed', label: 'Confirmed', icon: CheckCircle, color: 'blue' },
+  { key: 'processing', label: 'Preparing', icon: Package, color: 'purple' },
+  { key: 'ready', label: 'Ready for Pickup', icon: Truck, color: 'green' },
+  { key: 'completed', label: 'Completed', icon: CheckCircle, color: 'green' },
 ];
 
 export function OrderTracking() {
@@ -33,9 +35,9 @@ export function OrderTracking() {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
+  const [error, setError] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  
-  const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     fetchOrder();
@@ -47,9 +49,9 @@ export function OrderTracking() {
   useEffect(() => {
     if (order) {
       const token = order.token.split('-')[1] || order.token;
-      if (order.status === 'READY') {
+      if (order.status === 'ready') {
         document.title = `🎉 Ready! Order #${token} - QuickServe`;
-      } else if (order.status === 'PREPARING') {
+      } else if (order.status === 'processing') {
         document.title = `⏱️ Preparing Order #${token} - QuickServe`;
       } else {
         document.title = `Order #${token} - QuickServe`;
@@ -92,37 +94,41 @@ export function OrderTracking() {
 
   const fetchOrder = async () => {
     try {
+      setError(null);
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
       if (!token) {
         navigate('/login');
         return;
       }
 
-      const headers = { 'Authorization': `JWT ${token}` };
-      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+      const result = await customerAPI.getOrderById(orderId);
 
-      const response = await fetch(`${backend}/api/customer/orders/${orderId}`, { headers });
-      
-      const newAccessToken = response.headers.get('x-access-token');
-      const newRefreshToken = response.headers.get('x-refresh-token');
-      
-      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-
-      const data = await response.json();
-
-      if (data.success && data.order) {
-        setOrder(data.order);
+      if (result.success && result.data.order) {
+        setOrder(result.data.order);
+        
+        // Show notification if using dummy data
+        if (result.fallbackUsed) {
+          setErrorToast('Using offline data - some information may be outdated');
+          setTimeout(() => setErrorToast(null), 3000);
+        }
         
         // Check if user can review this order when it's completed
-        if (data.order.status === 'COMPLETED') {
-          checkCanReview(data.order.id);
+        if (result.data.order.status === 'completed') {
+          checkCanReview(result.data.order.id);
         }
+      } else {
+        setError({
+          message: result.error || 'Order not found',
+          type: result.errorType || 'notfound'
+        });
       }
     } catch (error) {
       console.error('Error fetching order:', error);
+      setError({
+        message: 'Failed to load order details. Please try again.',
+        type: 'general'
+      });
     } finally {
       setLoading(false);
     }
@@ -131,10 +137,12 @@ export function OrderTracking() {
   const checkCanReview = async (orderIdToCheck) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
-
       if (!token) return;
 
+      // Note: This would need to be added to reviewsAPI in apiWithFallback.js
+      // For now, keeping the direct fetch but with better error handling
+      const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+      const refreshToken = localStorage.getItem('refreshToken');
       const headers = { 'Authorization': `JWT ${token}` };
       if (refreshToken) headers['x-refresh-token'] = refreshToken;
 
@@ -146,6 +154,11 @@ export function OrderTracking() {
       if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
 
+      if (!response.ok) {
+        console.warn('Failed to check review status:', response.status);
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -156,50 +169,32 @@ export function OrderTracking() {
       }
     } catch (error) {
       console.error('Error checking review status:', error);
+      // Don't show error to user as this is not critical
     }
   };
 
   const handleSubmitReview = async (reviewData) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
       if (!token) {
         navigate('/login');
         return;
       }
 
-      const headers = {
-        'Authorization': `JWT ${token}`,
-        'Content-Type': 'application/json',
-      };
-      if (refreshToken) headers['x-refresh-token'] = refreshToken;
-
-      const response = await fetch(`${backend}/api/reviews`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          shopId: order.shopId,
-          orderId: order.id,
-          rating: reviewData.rating,
-          comment: reviewData.comment,
-        }),
+      const result = await reviewsAPI.submitReview({
+        shopId: order.shopId,
+        orderId: order.id,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
       });
 
-      const newAccessToken = response.headers.get('x-access-token');
-      const newRefreshToken = response.headers.get('x-refresh-token');
-      
-      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-
-      const data = await response.json();
-
-      if (data.success) {
+      if (result.success) {
         showSuccess('Thank you for your review! 🌟');
         setCanReview(false);
-        setExistingReview(data.review);
+        setExistingReview(result.data.review);
       } else {
-        showError(data.message || 'Failed to submit review');
+        showError(result.error || 'Failed to submit review');
       }
     } catch (error) {
       console.error('Error submitting review:', error);
@@ -231,8 +226,16 @@ export function OrderTracking() {
     try {
       setCancelling(true);
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Note: This would need to be added to customerAPI in apiWithFallback.js
+      // For now, keeping the direct fetch but with better error handling
+      const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+      const refreshToken = localStorage.getItem('refreshToken');
       const headers = {
         'Authorization': `JWT ${token}`,
         'Content-Type': 'application/json',
@@ -250,6 +253,11 @@ export function OrderTracking() {
       if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Cancel failed with status ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -260,7 +268,7 @@ export function OrderTracking() {
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      showError('Failed to cancel order. Please try again.');
+      showError(error.message || 'Failed to cancel order. Please try again.');
     } finally {
       setCancelling(false);
     }
@@ -325,6 +333,36 @@ export function OrderTracking() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen gradient-bg">
+        {/* Header */}
+        <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
+          <div className="p-4 flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/customer/orders')}
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </motion.button>
+            <h1 className="font-bold text-white text-xl">Error</h1>
+          </div>
+        </div>
+        
+        <div className="p-6 flex items-center justify-center min-h-[60vh]">
+          <ErrorMessage
+            error={error.message}
+            type={error.type}
+            onRetry={fetchOrder}
+            className="max-w-md"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!order) {
     return (
       <div className="min-h-screen gradient-bg flex flex-col items-center justify-center p-6">
@@ -352,6 +390,14 @@ export function OrderTracking() {
   return (
     <div className="min-h-screen gradient-bg pb-24">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      {/* Error Toast */}
+      {errorToast && (
+        <ErrorToast 
+          error={errorToast} 
+          onClose={() => setErrorToast(null)} 
+        />
+      )}
       {/* Header */}
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center gap-4">
@@ -537,7 +583,7 @@ export function OrderTracking() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={`glass rounded-2xl p-6 text-center border-2 ${
-              order.status === 'COMPLETED' || order.status === 'READY' 
+              order.status === 'completed' || order.status === 'ready' 
                 ? 'border-green-500/50 bg-green-500/10'
                 : order.preparationTime 
                   ? 'border-blue-500/50 bg-blue-500/10'
@@ -545,15 +591,15 @@ export function OrderTracking() {
             }`}
           >
             <div className="text-4xl mb-3">
-              {order.status === 'COMPLETED' || order.status === 'READY' ? '✅' : 
+              {order.status === 'completed' || order.status === 'ready' ? '✅' : 
                order.preparationTime ? '⏱️' : '⏳'}
             </div>
             
             <h3 className={`text-xl font-bold mb-2 ${
-              order.status === 'COMPLETED' || order.status === 'READY' ? 'text-green-400' :
+              order.status === 'completed' || order.status === 'ready' ? 'text-green-400' :
               order.preparationTime ? 'text-blue-400' : 'text-slate-400'
             }`}>
-              {order.status === 'COMPLETED' || order.status === 'READY' ? 'Preparation Completed' :
+              {order.status === 'completed' || order.status === 'ready' ? 'Preparation Completed' :
                order.preparationTime ? 'Preparation Time' : 'Preparation Time'}
             </h3>
             
@@ -561,7 +607,7 @@ export function OrderTracking() {
               <>
                 <p className="text-2xl font-bold text-white mb-1">{order.preparationTime} minutes</p>
                 <p className="text-sm text-slate-400">
-                  {order.status === 'COMPLETED' || order.status === 'READY' 
+                  {order.status === 'completed' || order.status === 'ready' 
                     ? 'Your order was prepared as estimated'
                     : 'Estimated time set by the shopkeeper'}
                 </p>
@@ -569,7 +615,7 @@ export function OrderTracking() {
                 {/* Show timing details if available */}
                 {order.preparingAt && (
                   <div className={`mt-3 p-3 rounded-xl border ${
-                    order.status === 'COMPLETED' || order.status === 'READY'
+                    order.status === 'completed' || order.status === 'ready'
                       ? 'bg-green-500/10 border-green-500/30'
                       : 'bg-blue-500/10 border-blue-500/30'
                   }`}>
@@ -645,7 +691,7 @@ export function OrderTracking() {
         )}
 
         {/* Order Ready Notification */}
-        {order.status === 'READY' && (
+        {order.status === 'ready' && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -681,7 +727,7 @@ export function OrderTracking() {
         )}
 
         {/* Order Completed - Rating Section */}
-        {order.status === 'COMPLETED' && (
+        {order.status === 'completed' && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -848,7 +894,7 @@ export function OrderTracking() {
         </motion.div>
 
         {/* Historical Timing Display for Completed Orders */}
-        {(order.status === 'COMPLETED' || order.status === 'READY') && (
+        {(order.status === 'completed' || order.status === 'ready') && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

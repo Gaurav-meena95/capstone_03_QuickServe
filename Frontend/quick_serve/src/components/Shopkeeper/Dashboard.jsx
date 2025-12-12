@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Clock, Users, DollarSign, Star, RefreshCw, Search, X } from "lucide-react";
-import { fetchWithAuth } from '../../utils/api';
+import { shopkeeperAPI, reviewsAPI } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '../Notification/NotificationPanel';
 import { useShopData } from '../../App';
@@ -38,27 +38,25 @@ export function ShopkeeperDashboard() {
         setLoading(true);
         setError(null);
 
-        const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
+        console.log('🔍 Fetching dashboard with fallback API...');
+        const result = await shopkeeperAPI.getDashboard();
 
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            localStorage.clear();
-            navigate('/login');
-            return;
+        if (result.success) {
+          console.log('✅ Dashboard data received from backend:', result.data);
+          setDashboardData(result.data);
+          setError(null); // Clear any previous errors
+          
+          // Update global shop context with latest data
+          if (result.data.shop && !shopData) {
+            setShopData({
+              ...result.data.shop,
+              isOpen: result.data.shop.status === 'open',
+              cuisineType: result.data.shop.category
+            });
           }
-          throw new Error('Failed to fetch dashboard data');
-        }
-
-        const data = await response.json();
-        setDashboardData(data);
-        
-        // Update global shop context with latest data including images (only if not already set)
-        if (data.shop && !shopData) {
-          setShopData({
-            ...data.shop,
-            isOpen: data.shop.status === 'OPEN',
-            cuisineType: data.shop.category
-          });
+        } else {
+          console.error('❌ Dashboard API failed:', result.error);
+          setError(`Unable to load dashboard data: ${result.error}`);
         }
       } catch (err) {
         console.error('Error fetching dashboard:', err);
@@ -75,22 +73,27 @@ export function ShopkeeperDashboard() {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
+      const result = await shopkeeperAPI.getDashboard();
       
-      if (!response.ok) {
-        throw new Error('Failed to refresh dashboard');
-      }
-      
-      const data = await response.json();
-      setDashboardData(data);
-      
-      // Update shop context with latest data
-      if (data.shop) {
-        setShopData({
-          ...data.shop,
-          isOpen: data.shop.status === 'OPEN',
-          cuisineType: data.shop.category
-        });
+      if (result.success) {
+        setDashboardData(result.data);
+        
+        // Update shop context with latest data
+        if (result.data.shop) {
+          setShopData({
+            ...result.data.shop,
+            isOpen: result.data.shop.status === 'open',
+            cuisineType: result.data.shop.category
+          });
+        }
+        
+        if (result.fallbackUsed) {
+          setError('📍 Showing demo data - backend unavailable');
+        } else {
+          setError(null);
+        }
+      } else {
+        setError('Failed to refresh dashboard');
       }
     } catch (err) {
       console.error('Error refreshing dashboard:', err);
@@ -104,10 +107,12 @@ export function ShopkeeperDashboard() {
     const fetchReviews = async () => {
       if (activeTab === 'reviews') {
         try {
-          const response = await fetchWithAuth(`${API_BASE_URL}/api/reviews/my-shop`);
-          const data = await response.json();
-          if (data.success) {
-            setReviews(data.reviews || []);
+          const result = await reviewsAPI.getMyShopReviews();
+          if (result.success) {
+            setReviews(result.data.reviews || []);
+            console.log('✅ Reviews loaded from backend');
+          } else {
+            console.error('❌ Failed to load reviews:', result.error);
           }
         } catch (err) {
           console.error('Error fetching reviews:', err);
@@ -146,27 +151,22 @@ export function ShopkeeperDashboard() {
 
   const handleUpdateOrderStatus = async (orderId, newStatus, prepTime = null) => {
     try {
-      const payload = { status: newStatus };
-      if (prepTime && newStatus === 'PREPARING') {
-        payload.preparationTime = parseInt(prepTime);
+      console.log('🔄 Updating order status:', orderId, newStatus);
+      const result = await shopkeeperAPI.updateOrderStatus(orderId, newStatus, prepTime);
+
+      if (result.success) {
+        console.log('✅ Order status updated');
+        
+        // Refresh dashboard data
+        const dashResult = await shopkeeperAPI.getDashboard();
+        if (dashResult.success) {
+          setDashboardData(dashResult.data);
+        } else {
+          console.error('❌ Failed to refresh dashboard after order update:', dashResult.error);
+        }
+      } else {
+        console.error('❌ Failed to update order status:', result.error);
       }
-
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/shops/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update order status');
-      }
-
-      // Refresh only dashboard data, not shop context
-      const dashResponse = await fetchWithAuth(`${API_BASE_URL}/api/shops/dashboard`);
-      const data = await dashResponse.json();
-      setDashboardData(data);
     } catch (err) {
       console.error('Error updating order status:', err);
     }
@@ -221,12 +221,12 @@ export function ShopkeeperDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "PENDING":
-      case "CONFIRMED":
+      case "pending":
+      case "confirmed":
         return "border-orange-500 bg-orange-500/10 text-orange-400";
-      case "PREPARING":
+      case "processing":
         return "border-blue-500 bg-blue-500/10 text-blue-400";
-      case "READY":
+      case "ready":
         return "border-green-500 bg-green-500/10 text-green-400";
       default:
         return "border-slate-500 bg-slate-500/10 text-slate-400";

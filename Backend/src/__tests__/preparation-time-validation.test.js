@@ -158,7 +158,7 @@ describe('Preparation Time Validation', () => {
   });
   /**
    * **Feature: preparation-timer, Property 7: Timestamp recording on status change**
-   * For any order changing from PREPARING to READY status, the readyAt timestamp 
+   * For any order changing from processing to ready status, the readyAt timestamp 
    * should be recorded and the order should maintain its preparation timing data
    * **Validates: Requirements 4.4, 5.1**
    */
@@ -168,11 +168,11 @@ describe('Preparation Time Validation', () => {
         fc.integer({ min: 1, max: 120 }),
         async (preparationTime) => {
           // Mock order status update logic
-          const updateData = { status: 'READY' };
+          const updateData = { status: 'ready' };
           const beforeUpdate = new Date();
           
           // Simulate the logic from updateOrderStatus
-          if (updateData.status === 'READY') {
+          if (updateData.status === 'ready') {
             updateData.readyAt = new Date();
           }
           
@@ -184,7 +184,7 @@ describe('Preparation Time Validation', () => {
           expect(updateData.readyAt.getTime()).toBeLessThanOrEqual(afterUpdate.getTime());
 
           // Verify status was updated
-          expect(updateData.status).toBe('READY');
+          expect(updateData.status).toBe('ready');
 
           return true;
         }
@@ -199,15 +199,15 @@ describe('Preparation Time Validation', () => {
   test('Preparation timing data preservation during status changes', () => {
     const originalOrder = {
       id: 'test-order',
-      status: 'PREPARING',
+      status: 'processing',
       preparationTime: 15,
       preparingAt: new Date('2024-01-01T10:00:00Z'),
       readyAt: null
     };
 
-    // Simulate status change to READY
-    const updateData = { status: 'READY' };
-    if (updateData.status === 'READY') {
+    // Simulate status change to ready
+    const updateData = { status: 'ready' };
+    if (updateData.status === 'ready') {
       updateData.readyAt = new Date();
     }
 
@@ -221,5 +221,5 @@ describe('Preparation Time Validation', () => {
     expect(updatedOrder.preparationTime).toBe(originalOrder.preparationTime);
     expect(updatedOrder.preparingAt).toBe(originalOrder.preparingAt);
     expect(updatedOrder.readyAt).toBeInstanceOf(Date);
-    expect(updatedOrder.status).toBe('READY');
+    expect(updatedOrder.status).toBe('ready');
   });

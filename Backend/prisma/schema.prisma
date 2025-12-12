@@ -47,9 +47,10 @@ model User {
 // ============================================
 
 enum ShopStatus {
-  OPEN
-  CLOSED
-  TEMPORARILY_CLOSED
+  open
+  closed
+  maintenance
+  inactive
 }
 
 model Shop {
@@ -60,7 +61,7 @@ model Shop {
   category     String
   image        String?
   logo         String?
-  status       ShopStatus @default(OPEN)
+  status       ShopStatus @default(open)
   rating       Float      @default(0)
   totalRatings Int        @default(0)
 
@@ -134,13 +135,13 @@ model MenuItem {
 // ============================================
 
 enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PREPARING
-  READY
-  COMPLETED
-  CANCELLED
-  REFUNDED
+  pending
+  confirmed
+  processing
+  ready
+  completed
+  cancelled
+  refunded
 }
 
 enum OrderType {
@@ -156,10 +157,10 @@ enum PaymentMethod {
 }
 
 enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
+  pending
+  completed
+  failed
+  refunded
 }
 
 model Order {
@@ -171,7 +172,7 @@ model Order {
   shopId      String
   shop        Shop   @relation(fields: [shopId], references: [id])
 
-  status        OrderStatus @default(PENDING)
+  status        OrderStatus @default(pending)
   orderType     OrderType   @default(NOW)
   scheduledTime DateTime?
 
@@ -181,7 +182,7 @@ model Order {
   address  Address? @relation(fields: [addressId], references: [id])
 
   paymentMethod PaymentMethod
-  paymentStatus PaymentStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(pending)
   payment       Payment?
 
   addressId String?
@@ -230,7 +231,7 @@ model Payment {
   customer        User          @relation(fields: [customerId], references: [id])
   amount          Float
   method          PaymentMethod
-  status          PaymentStatus @default(PENDING)
+  status          PaymentStatus @default(pending)
   transactionId   String?
   paymentIntentId String?
   receiptUrl      String?
@@ -285,9 +286,9 @@ model Favorite {
 }
 
 enum ReviewStatus {
-  PENDING
-  APPROVED
-  REJECTED
+  pending
+  approved
+  rejected
 }
 
 model Review {
@@ -299,7 +300,7 @@ model Review {
   orderId   String?
   rating    Int
   comment   String?
-  status    ReviewStatus @default(PENDING)
+  status    ReviewStatus @default(pending)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 

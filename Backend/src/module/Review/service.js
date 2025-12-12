@@ -16,7 +16,7 @@ exports.createReview = async (userId, reviewData) => {
         id: orderId,
         customerId: userId,
         shopId: shopId,
-        status: 'COMPLETED', // Only allow reviews for completed orders
+        status: 'completed', // Only allow reviews for completed orders
       },
     });
 
@@ -161,7 +161,7 @@ exports.canReviewOrder = async (userId, orderId) => {
     where: {
       id: orderId,
       customerId: userId,
-      status: 'COMPLETED',
+      status: 'completed',
     },
   });
 

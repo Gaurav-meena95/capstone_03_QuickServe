@@ -12,7 +12,7 @@ async function cleanupOldOrders() {
     // Delete completed orders older than 7 days
     const result = await prisma.order.deleteMany({
       where: {
-        status: 'COMPLETED',
+        status: 'completed',
         completedAt: {
           lt: sevenDaysAgo
         }

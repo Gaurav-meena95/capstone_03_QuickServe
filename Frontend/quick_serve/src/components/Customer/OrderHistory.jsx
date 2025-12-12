@@ -5,14 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
 import { ReviewModal } from "./ReviewModal";
+import { customerAPI, reviewsAPI } from '../../utils/api';
+import { ErrorMessage, ErrorToast } from '../ErrorMessage';
 
 const statusConfig = {
-  PENDING: { color: 'orange', icon: Clock, label: 'Pending' },
-  CONFIRMED: { color: 'blue', icon: CheckCircle, label: 'Confirmed' },
-  PREPARING: { color: 'purple', icon: Package, label: 'Preparing' },
-  READY: { color: 'green', icon: CheckCircle, label: 'Ready' },
-  COMPLETED: { color: 'green', icon: CheckCircle, label: 'Completed' },
-  CANCELLED: { color: 'red', icon: XCircle, label: 'Cancelled' },
+  pending: { color: 'orange', icon: Clock, label: 'Pending' },
+  confirmed: { color: 'blue', icon: CheckCircle, label: 'Confirmed' },
+  processing: { color: 'purple', icon: Package, label: 'Preparing' },
+  ready: { color: 'green', icon: CheckCircle, label: 'Ready' },
+  completed: { color: 'green', icon: CheckCircle, label: 'Completed' },
+  cancelled: { color: 'red', icon: XCircle, label: 'Cancelled' },
 };
 
 export function OrderHistory() {
@@ -24,9 +26,9 @@ export function OrderHistory() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderReviews, setOrderReviews] = useState({});
+  const [error, setError] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  
-  const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     fetchOrders();
@@ -35,7 +37,7 @@ export function OrderHistory() {
   // Check which orders have been reviewed
   useEffect(() => {
     const checkReviews = async () => {
-      const completedOrders = orders.filter(o => o.status === 'COMPLETED');
+      const completedOrders = orders.filter(o => o.status === 'completed');
       const token = localStorage.getItem('accessToken');
       const refreshToken = localStorage.getItem('refreshToken');
 
@@ -63,27 +65,36 @@ export function OrderHistory() {
 
   const fetchOrders = async () => {
     try {
+      setError(null);
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
-      const headers = { 'Authorization': `JWT ${token}` };
-      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+      if (!token) {
+        navigate('/login');
+        return;
+      }
 
-      const response = await fetch(`${backend}/api/customer/orders`, { headers });
-      
-      const newAccessToken = response.headers.get('x-access-token');
-      const newRefreshToken = response.headers.get('x-refresh-token');
-      
-      if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-      if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
+      const result = await customerAPI.getCustomerOrders();
 
-      const data = await response.json();
-
-      if (data.success) {
-        setOrders(data.orders || []);
+      if (result.success) {
+        setOrders(result.data.orders || []);
+        
+        // Show notification if using dummy data
+        if (result.fallbackUsed) {
+          setErrorToast('Using offline data - some information may be outdated');
+          setTimeout(() => setErrorToast(null), 3000);
+        }
+      } else {
+        setError({
+          message: result.error,
+          type: result.errorType || 'general'
+        });
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
+      setError({
+        message: 'Failed to load order history. Please try again.',
+        type: 'general'
+      });
     } finally {
       setLoading(false);
     }
@@ -91,9 +102,9 @@ export function OrderHistory() {
 
   const filteredOrders = orders.filter(order => {
     if (filter === 'all') return true;
-    if (filter === 'active') return ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'].includes(order.status);
-    if (filter === 'completed') return order.status === 'COMPLETED';
-    if (filter === 'cancelled') return order.status === 'CANCELLED';
+    if (filter === 'active') return ['pending', 'confirmed', 'processing', 'ready'].includes(order.status);
+    if (filter === 'completed') return order.status === 'completed';
+    if (filter === 'cancelled') return order.status === 'cancelled';
     return true;
   });
 
@@ -118,8 +129,16 @@ export function OrderHistory() {
     try {
       setCancellingOrderId(orderId);
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      // Note: This would need to be added to customerAPI in apiWithFallback.js
+      // For now, keeping the direct fetch but with better error handling
+      const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
+      const refreshToken = localStorage.getItem('refreshToken');
       const headers = {
         'Authorization': `JWT ${token}`,
         'Content-Type': 'application/json',
@@ -137,6 +156,11 @@ export function OrderHistory() {
       if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
       if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Cancel failed with status ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
@@ -147,14 +171,14 @@ export function OrderHistory() {
       }
     } catch (error) {
       console.error('Error cancelling order:', error);
-      showError('Failed to cancel order. Please try again.');
+      showError(error.message || 'Failed to cancel order. Please try again.');
     } finally {
       setCancellingOrderId(null);
     }
   };
 
   const canCancelOrder = (status) => {
-    return status === 'PENDING' || status === 'CONFIRMED';
+    return status === 'pending' || status === 'confirmed';
   };
 
   const handleRateOrder = (e, order) => {
@@ -166,32 +190,24 @@ export function OrderHistory() {
   const handleSubmitReview = async (reviewData) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
 
-      const headers = {
-        'Authorization': `JWT ${token}`,
-        'Content-Type': 'application/json',
-      };
-      if (refreshToken) headers['x-refresh-token'] = refreshToken;
+      if (!token) {
+        navigate('/login');
+        return;
+      }
 
-      const response = await fetch(`${backend}/api/reviews`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          shopId: selectedOrder.shop.id,
-          orderId: selectedOrder.id,
-          rating: reviewData.rating,
-          comment: reviewData.comment,
-        }),
+      const result = await reviewsAPI.submitReview({
+        shopId: selectedOrder.shop.id,
+        orderId: selectedOrder.id,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (result.success) {
         showSuccess('Thank you for your review! ⭐');
-        setOrderReviews(prev => ({ ...prev, [selectedOrder.id]: data.review }));
+        setOrderReviews(prev => ({ ...prev, [selectedOrder.id]: result.data.review }));
       } else {
-        showError(data.message || 'Failed to submit review');
+        showError(result.error || 'Failed to submit review');
       }
     } catch (error) {
       console.error('Error submitting review:', error);
@@ -261,6 +277,15 @@ export function OrderHistory() {
   return (
     <div className="min-h-screen gradient-bg pb-24">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+      
+      {/* Error Toast */}
+      {errorToast && (
+        <ErrorToast 
+          error={errorToast} 
+          onClose={() => setErrorToast(null)} 
+        />
+      )}
+      
       <div className="p-6 pt-8">
         {/* Header */}
         <motion.div
@@ -300,8 +325,16 @@ export function OrderHistory() {
           ))}
         </motion.div>
 
-        {/* Orders List */}
-        {filteredOrders.length === 0 ? (
+        {/* Error Display */}
+        {error ? (
+          <ErrorMessage
+            error={error.message}
+            type={error.type}
+            onRetry={fetchOrders}
+            className="mb-6"
+          />
+        ) : /* Orders List */
+        filteredOrders.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

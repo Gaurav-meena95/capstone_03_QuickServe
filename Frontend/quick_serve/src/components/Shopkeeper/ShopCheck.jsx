@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useShopData } from '../../App'
+import { shopkeeperAPI } from '../../utils/api'
 
 export function ShopCheck({ children, onShopData }) {
   const [loading, setLoading] = useState(true)
@@ -16,55 +17,38 @@ export function ShopCheck({ children, onShopData }) {
   const checkShop = async () => {
     try {
       const token = localStorage.getItem('accessToken')
-      const refreshToken = localStorage.getItem('refreshToken')
       
       if (!token) {
         navigate('/login')
         return
       }
 
-      const headers = {
-        'Authorization': `JWT ${token}`,
-        'Content-Type': 'application/json'
-      }
+      console.log('🔍 Checking shop from backend only...')
+      const result = await shopkeeperAPI.getShop()
       
-      if (refreshToken) {
-        headers['x-refresh-token'] = refreshToken
-      }
-
-      const response = await fetch(`${backend}/api/shops/me`, {
-        headers
-      })
-      
-      // Check for new tokens in response headers
-      const newAccessToken = response.headers.get('x-access-token')
-      const newRefreshToken = response.headers.get('x-refresh-token')
-      
-      if (newAccessToken) {
-        localStorage.setItem('accessToken', newAccessToken)
-      }
-      if (newRefreshToken) {
-        localStorage.setItem('refreshToken', newRefreshToken)
-      }
-
-      if (response.ok) {
-        const data = await response.json()
-        const shop = data.shop || data
+      if (result.success) {
+        console.log('✅ Shop data received from backend:', result.data)
+        const shop = result.data.shop || result.data
         const normalizedShop = {
           ...shop,
           cuisineType: shop.cuisineType || shop.category || 'Category',
-          isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'OPEN'),
+          isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'open'),
         }
+        console.log('✅ Normalized shop:', normalizedShop)
+        
         // Update context
         setShopData(normalizedShop)
         if (onShopData) onShopData(normalizedShop)
-      } else if (response.status === 404) {
-        navigate('/shopkeeper/shop/create')
-      } else if (response.status === 401 || response.status === 403) {
-        localStorage.clear()
-        navigate('/login')
       } else {
-        navigate('/shopkeeper/shop/create')
+        console.error('❌ Shop API failed:', result.error)
+        if (result.errorType === 'notfound') {
+          navigate('/shopkeeper/shop/create')
+        } else if (result.errorType === 'auth') {
+          localStorage.clear()
+          navigate('/login')
+        } else {
+          navigate('/shopkeeper/shop/create')
+        }
       }
     } catch (error) {
       console.error('Error checking shop:', error)

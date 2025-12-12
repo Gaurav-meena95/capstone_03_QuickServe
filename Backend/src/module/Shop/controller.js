@@ -6,7 +6,7 @@ exports.createShop = async (req, res) => {
         // Normalize response to include isOpen for frontend
         const normalizedShop = {
             ...shop,
-            isOpen: shop.status === 'OPEN',
+            isOpen: shop.status === 'open',
             cuisineType: shop.category
         }
         return res.status(201).json({ msg: 'Shop create Successfully', shop: normalizedShop })
@@ -18,19 +18,24 @@ exports.createShop = async (req, res) => {
 }
 exports.getMyShop = async (req, res) => {
     try {
+        console.log('🔍 Getting shop for user:', req.user.id, req.user.email)
         const myShop = await service.getShopbyUserId(req.user.id)
+        console.log('🏪 Shop found:', myShop ? myShop.name : 'No shop')
+        
         if (!myShop) {
+            console.log('❌ No shop found for user:', req.user.id)
             return res.status(404).json({ msg: "No shop found for this account" })
         }
         // Normalize response to include isOpen for frontend
         const normalizedShop = {
             ...myShop,
-            isOpen: myShop.status === 'OPEN',
+            isOpen: myShop.status === 'open',
             cuisineType: myShop.category
         }
+        console.log('✅ Returning shop:', normalizedShop.name)
         return res.status(200).json({ msg: 'Shop fetch successfuly', shop: normalizedShop })
     } catch (error) {
-        console.log(error)
+        console.error('❌ Error in getMyShop:', error)
         return res.status(500).json({ msg: "Internal Server Error" })
     }
 }
@@ -41,7 +46,7 @@ exports.updateMyShop = async (req, res) => {
         // Normalize response to include isOpen for frontend
         const normalizedShop = {
             ...update,
-            isOpen: update.status === 'OPEN',
+            isOpen: update.status === 'open',
             cuisineType: update.category
         }
         return res.status(200).json({ msg: 'Shop update successfully', shop: normalizedShop })

@@ -159,8 +159,8 @@ describe('Timer Utilities', () => {
     }
     
     expect(isOrderPreparing(preparingOrder)).toBe(true)
-    expect(isOrderPreparing({ status: 'PENDING' })).toBe(false)
-    expect(isOrderPreparing({ status: 'PREPARING' })).toBe(false) // missing timing data
+    expect(isOrderPreparing({ status: 'pending' })).toBe(false)
+    expect(isOrderPreparing({ status: 'processing' })).toBe(false) // missing timing data
     expect(isOrderPreparing(null)).toBe(false)
   })
 
@@ -335,7 +335,7 @@ describe('Timer Utilities', () => {
           const readyAt = new Date(preparingAt.getTime() + actualMinutes * 60000)
           
           const order = {
-            status: 'COMPLETED',
+            status: 'completed',
             preparationTime: estimatedMinutes,
             preparingAt: preparingAt.toISOString(),
             readyAt: readyAt.toISOString()
@@ -392,7 +392,7 @@ describe('Timer Utilities', () => {
    */
   test('Historical timing display handles orders without timing data', () => {
     const orderWithoutTiming = {
-      status: 'COMPLETED',
+      status: 'completed',
       // No preparationTime, preparingAt, or readyAt
     }
 

@@ -8,8 +8,10 @@ import { ProfilePage } from './components/Customer/ProfilePage'
 import { EditProfilePage } from './components/Customer/ProfileEdit'
 import { ShopMenu } from './components/Customer/ShopMenu'
 import { Checkout } from './components/Customer/CheckOut'
+import { shopkeeperAPI } from './utils/api'
 import { OrderTracking } from './components/Customer/OrderTracking'
 import { OrderHistory } from './components/Customer/OrderHistory'
+import { FavoritesPage } from './components/Customer/FavoritesPage'
 import { BottomNav } from './components/Customer/BottomNav'
 import { NotificationSystem } from './components/Notification/NotificationSystem'
 import { ShopkeeperDashboard } from './components/Shopkeeper/Dashboard'
@@ -52,22 +54,14 @@ function App() {
         headers['x-refresh-token'] = refreshToken
       }
       
-      fetch(`${backend}/api/shops/me`, {
-        headers
-      })
-        .then(res => {
-          if (res.ok) {
-            return res.json()
-          }
-          return null
-        })
-        .then(data => {
-          if (data && data.shop) {
-            const shop = data.shop
+      shopkeeperAPI.getShop()
+        .then(result => {
+          if (result.success && result.data.shop) {
+            const shop = result.data.shop
             const normalizedShop = {
               ...shop,
               cuisineType: shop.cuisineType || shop.category || 'Category',
-              isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'OPEN'),
+              isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'open'),
             }
             setShopData(normalizedShop)
           }
@@ -132,6 +126,7 @@ function CustomerLayout() {
         <Route path="checkout" element={<Checkout />} />
         <Route path="orders" element={<OrderHistory />} />
         <Route path="order-tracking/:orderId" element={<OrderTracking />} />
+        <Route path="favorites" element={<FavoritesPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="edit-profile" element={<EditProfilePage />} />
         <Route path="*" element={<Navigate to="/customer/home" replace />} />

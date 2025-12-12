@@ -2,6 +2,8 @@ import { motion } from 'framer-motion'
 import { Heart, MapPin, Star, TrendingUp, Search, Sparkles, User, Filter, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react';
+import { customerAPI } from '../../utils/api';
+import { ErrorMessage, ErrorToast } from '../ErrorMessage';
 
 export function CustomerHome() {
     const navigate = useNavigate()
@@ -14,6 +16,8 @@ export function CustomerHome() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [showFilters, setShowFilters] = useState(false);
+    const [error, setError] = useState(null);
+    const [errorToast, setErrorToast] = useState(null);
     
     const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
@@ -27,49 +31,46 @@ export function CustomerHome() {
     const fetchShops = async () => {
         try {
             setLoading(true);
+            setError(null);
             const token = localStorage.getItem('accessToken');
-            const refreshToken = localStorage.getItem('refreshToken');
 
             if (!token) {
                 navigate('/login');
                 return;
             }
 
-            const headers = {
-                'Authorization': `JWT ${token}`,
-            };
-            
-            if (refreshToken) {
-                headers['x-refresh-token'] = refreshToken;
-            }
-
-            const params = new URLSearchParams({
+            const filters = {
                 page: page.toString(),
                 limit: '6',
-            });
+            };
 
-            if (searchQuery) params.append('search', searchQuery);
-            if (selectedCategory && selectedCategory !== 'All') params.append('category', selectedCategory);
-            if (sortBy) params.append('sortBy', sortBy);
+            if (searchQuery) filters.search = searchQuery;
+            if (selectedCategory && selectedCategory !== 'All') filters.category = selectedCategory;
+            if (sortBy) filters.sortBy = sortBy;
 
-            const response = await fetch(`${backend}/api/customer/shops?${params}`, {
-                headers,
-            });
+            const result = await customerAPI.getShops(filters);
 
-            const newAccessToken = response.headers.get('x-access-token');
-            const newRefreshToken = response.headers.get('x-refresh-token');
-            
-            if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-            if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-
-            const data = await response.json();
-
-            if (data.success) {
-                setShops(data.shops || []);
-                setTotalPages(data.pagination?.totalPages || 1);
+            if (result.success) {
+                setShops(result.data.shops || []);
+                setTotalPages(result.data.pagination?.totalPages || 1);
+                
+                // Show notification if using dummy data
+                if (result.fallbackUsed) {
+                    setErrorToast('Using offline data - some information may be outdated');
+                    setTimeout(() => setErrorToast(null), 3000);
+                }
+            } else {
+                setError({
+                    message: result.error,
+                    type: result.errorType || 'general'
+                });
             }
         } catch (error) {
             console.error('Error fetching shops:', error);
+            setError({
+                message: 'Failed to load shops. Please try again.',
+                type: 'general'
+            });
         } finally {
             setLoading(false);
         }
@@ -78,29 +79,56 @@ export function CustomerHome() {
     const fetchFavorites = async () => {
         try {
             const token = localStorage.getItem('accessToken');
-            const refreshToken = localStorage.getItem('refreshToken');
 
             if (!token) return;
 
-            const headers = {
-                'Authorization': `JWT ${token}`,
-            };
-            
-            if (refreshToken) {
-                headers['x-refresh-token'] = refreshToken;
-            }
+            const result = await customerAPI.getFavorites();
 
-            const response = await fetch(`${backend}/api/customer/favorites`, {
-                headers,
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setFavorites(data.favorites || []);
+            if (result.success) {
+                setFavorites(result.data.favorites || []);
+            } else {
+                console.error('Failed to load favorites:', result.error);
+                // Don't show error for favorites as it's not critical
             }
         } catch (error) {
             console.error('Error fetching favorites:', error);
+        }
+    };
+
+    const toggleFavorite = async (shop) => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+
+            const isFavorite = favorites.some(fav => fav.id === shop.id);
+            
+            if (isFavorite) {
+                // Remove from favorites
+                const result = await customerAPI.removeFromFavorites(shop.id);
+                if (result.success) {
+                    setFavorites(prev => prev.filter(fav => fav.id !== shop.id));
+                } else {
+                    setErrorToast('Failed to remove from favorites');
+                    setTimeout(() => setErrorToast(null), 3000);
+                }
+            } else {
+                // Add to favorites
+                const result = await customerAPI.addToFavorites(shop.id);
+                if (result.success) {
+                    setFavorites(prev => [...prev, shop]);
+                } else {
+                    setErrorToast('Failed to add to favorites');
+                    setTimeout(() => setErrorToast(null), 3000);
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
+            setErrorToast('Something went wrong. Please try again.');
+            setTimeout(() => setErrorToast(null), 3000);
         }
     };
 
@@ -121,6 +149,14 @@ export function CustomerHome() {
 
     return (
         <div className="min-h-screen pb-24 gradient-bg">
+            {/* Error Toast */}
+            {errorToast && (
+                <ErrorToast 
+                    error={errorToast} 
+                    onClose={() => setErrorToast(null)} 
+                />
+            )}
+            
             <div className="p-6 pt-8">
                 {/* Header */}
                 <motion.div
@@ -292,6 +328,13 @@ export function CustomerHome() {
                                 </div>
                             </div>
                         </div>
+                    ) : error ? (
+                        <ErrorMessage
+                            error={error.message}
+                            type={error.type}
+                            onRetry={fetchShops}
+                            className="mb-6"
+                        />
                     ) : shops.length === 0 ? (
                         <div className="text-center text-slate-400 py-8">No shops found</div>
                     ) : (
@@ -315,10 +358,29 @@ export function CustomerHome() {
                                             />
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent" />
-                                        <div className="absolute bottom-3 left-3 right-3">
+                                        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                                             <span className="px-2 py-1 bg-orange-500/20 border border-orange-500/50 rounded-lg text-xs text-orange-400">
                                                 {shop.category}
                                             </span>
+                                            <motion.button
+                                                whileHover={{ scale: 1.1 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFavorite(shop);
+                                                }}
+                                                className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
+                                                    favorites.some(fav => fav.id === shop.id)
+                                                        ? 'bg-pink-500/20 border border-pink-500/50'
+                                                        : 'bg-slate-900/50 border border-slate-600/50'
+                                                }`}
+                                            >
+                                                <Heart className={`w-4 h-4 transition-colors ${
+                                                    favorites.some(fav => fav.id === shop.id)
+                                                        ? 'text-pink-500 fill-current'
+                                                        : 'text-slate-400'
+                                                }`} />
+                                            </motion.button>
                                         </div>
                                     </div>
                                     <div className="p-4">
@@ -399,13 +461,25 @@ export function CustomerHome() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 }}
                     >
-                        <div className="flex items-center gap-2 mb-4">
-                            <Heart className="w-5 h-5 text-pink-500 fill-current" />
-                            <h2 className="text-xl font-bold text-white">Your Favorites</h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <Heart className="w-5 h-5 text-pink-500 fill-current" />
+                                <h2 className="text-xl font-bold text-white">Your Favorites</h2>
+                            </div>
+                            {favorites.length > 2 && (
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => navigate('/customer/favorites')}
+                                    className="px-3 py-1 glass rounded-lg text-sm text-pink-400 hover:bg-pink-500/10 transition-colors cursor-pointer"
+                                >
+                                    View All
+                                </motion.button>
+                            )}
                         </div>
 
                         <div className="space-y-3">
-                            {favorites.map((shop) => (
+                            {favorites.slice(0, 3).map((shop) => (
                                 <motion.div
                                     key={shop.id}
                                     initial={{ opacity: 0, x: -20 }}

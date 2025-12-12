@@ -5,7 +5,7 @@ exports.getAllShops = async ({ city, category, search, sortBy, page = 1, limit =
   const skip = (page - 1) * limit;
   
   const where = {
-    status: 'OPEN',
+    status: 'open',
   };
 
   if (city) where.city = city;
@@ -164,13 +164,13 @@ exports.createOrder = async (userId, orderData) => {
             orderNumber,
             customerId: userId,
             shopId,
-            status: 'PENDING',
+            status: 'pending',
             orderType: orderType || 'NOW',
             scheduledTime: scheduledTime ? new Date(scheduledTime) : null,
             subtotal,
             total,
             paymentMethod: paymentMethod || 'CASH',
-            paymentStatus: 'PENDING',
+            paymentStatus: 'pending',
             items: {
               create: orderItems,
             },
@@ -385,15 +385,15 @@ exports.cancelOrder = async (userId, orderId) => {
 
   if (!order) throw new Error('Order not found');
 
-  // Only allow cancellation for PENDING or CONFIRMED orders
-  if (order.status !== 'PENDING' && order.status !== 'CONFIRMED') {
+  // Only allow cancellation for pending or confirmed orders
+  if (order.status !== 'pending' && order.status !== 'confirmed') {
     throw new Error('Order cannot be cancelled at this stage');
   }
 
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
-      status: 'CANCELLED',
+      status: 'cancelled',
       cancelledAt: new Date(),
     },
     include: {

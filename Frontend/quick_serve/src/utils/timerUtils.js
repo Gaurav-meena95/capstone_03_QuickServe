@@ -93,7 +93,7 @@ export const getProgressPercentage = (timerState) => {
  * @returns {boolean} - True if order is preparing
  */
 export const isOrderPreparing = (order) => {
-  return !!(order && order.status === 'PREPARING' && order.preparationTime && order.preparingAt);
+  return !!(order && order.status === 'processing' && order.preparationTime && order.preparingAt);
 };
 
 /**

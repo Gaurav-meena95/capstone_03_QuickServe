@@ -26,9 +26,20 @@ async function signup(req, res) {
             });
         }
 
-        const existing = await prisma.user.findUnique({ where: { email, phone } })
+        const existing = await prisma.user.findFirst({ 
+            where: { 
+                OR: [
+                    { email: email },
+                    { phone: phone }
+                ]
+            } 
+        })
         if (existing) {
-            return res.status(400).json({ message: 'User already exists' })
+            if (existing.email === email) {
+                return res.status(400).json({ message: 'User with this email already exists' })
+            } else {
+                return res.status(400).json({ message: 'User with this phone number already exists' })
+            }
         }
         const hashedPass = await bcrypt.hash(password, 10)
         const user = await prisma.user.create({
@@ -69,11 +80,20 @@ async function signup(req, res) {
 async function login(req, res) {
     try {
         const { email, password, role, phone } = req.body
-        const existing = await prisma.user.findUnique({ where: { email, phone, role } })
+        console.log('🔍 Login attempt:', { email, role });
+        
+        const existing = await prisma.user.findFirst({ 
+            where: { 
+                email: email,
+                role: role 
+            } 
+        })
 
         if (!existing) {
+            console.log('❌ User not found:', { email, role });
             return res.status(404).json({ message: "User not found or Check your Role" })
         } else {
+            console.log('✅ User found:', existing.email);
             const isPasswordMatch = bcrypt.compareSync(password, existing.password)
             if (isPasswordMatch) {
                 const jwtToken = await jwt.sign(
@@ -86,6 +106,7 @@ async function login(req, res) {
                     sec_key,
                     { expiresIn: '7d' }
                 )
+                console.log('✅ Login successful, sending tokens');
                 return res.status(200).json({
                     message: "Login Successfully",
                     user: existing,
@@ -94,6 +115,7 @@ async function login(req, res) {
                 });
 
             } else {
+                console.log('❌ Password mismatch');
                 return res.status(401).json({ message: 'Invalid credentials' })
             }
 

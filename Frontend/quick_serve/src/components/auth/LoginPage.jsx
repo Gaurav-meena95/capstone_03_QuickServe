@@ -32,13 +32,20 @@ export function LoginPage() {
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Failed')
 
+            console.log('🔑 Login response:', loginUser);
+            
             if (loginUser.token) {
                 localStorage.setItem('accessToken', loginUser.token)
+                console.log('✅ Access token stored');
+            } else {
+                console.error('❌ No token in login response');
             }
             if (loginUser.refreshToken) {
                 localStorage.setItem('refreshToken', loginUser.refreshToken)
+                console.log('✅ Refresh token stored');
             }
             localStorage.setItem('userRole', selectedRole)
+            console.log('✅ User role stored:', selectedRole);
             
             // Navigate based on role - ShopCheck will handle shop verification
             if (selectedRole === 'CUSTOMER') {

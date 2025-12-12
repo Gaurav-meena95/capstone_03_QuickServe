@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ShoppingCart, Plus, Minus, Search, X, Filter } from "lucide-react";
+import { ChevronLeft, ShoppingCart, Plus, Minus, Search, X, Filter, Heart } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import { customerAPI } from '../../utils/api';
+import { ErrorMessage, ErrorToast } from '../ErrorMessage';
 
 export function ShopMenu() {
   const navigate = useNavigate();
@@ -12,12 +14,17 @@ export function ShopMenu() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name'); // 'name', 'price_low', 'price_high'
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [error, setError] = useState(null);
+  const [errorToast, setErrorToast] = useState(null);
   
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     fetchShopMenu();
     loadCartFromStorage();
+    fetchFavorites();
   }, [slug]);
 
   // Load cart from localStorage when component mounts
@@ -65,39 +72,95 @@ export function ShopMenu() {
 
   const fetchShopMenu = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
+      setError(null);
+      const result = await customerAPI.getShopBySlug(slug);
 
-      const headers = {};
-      
-      // Add auth headers only if user is logged in
-      if (token) {
-        headers['Authorization'] = `JWT ${token}`;
-        if (refreshToken) headers['x-refresh-token'] = refreshToken;
-      }
-
-      const response = await fetch(`${backend}/api/customer/shops/${slug}`, { headers });
-      
-      // Update tokens only if user is logged in
-      if (token) {
-        const newAccessToken = response.headers.get('x-access-token');
-        const newRefreshToken = response.headers.get('x-refresh-token');
+      if (result.success && result.data.shop) {
+        setShop(result.data.shop);
         
-        if (newAccessToken) localStorage.setItem('accessToken', newAccessToken);
-        if (newRefreshToken) localStorage.setItem('refreshToken', newRefreshToken);
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShop(data.shop);
+        // Show notification if using dummy data
+        if (result.fallbackUsed) {
+          setErrorToast('Using offline data - some information may be outdated');
+          setTimeout(() => setErrorToast(null), 3000);
+        }
+      } else {
+        setError({
+          message: result.error || 'Shop not found',
+          type: result.errorType || 'notfound'
+        });
       }
     } catch (error) {
       console.error('Error:', error);
+      setError({
+        message: 'Failed to load shop menu. Please try again.',
+        type: 'general'
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchFavorites = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      const result = await customerAPI.getFavorites();
+      if (result.success) {
+        setFavorites(result.data.favorites || []);
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      if (!shop) return;
+
+      const isCurrentlyFavorite = favorites.some(fav => fav.id === shop.id);
+      
+      if (isCurrentlyFavorite) {
+        // Remove from favorites
+        const result = await customerAPI.removeFromFavorites(shop.id);
+        if (result.success) {
+          setFavorites(prev => prev.filter(fav => fav.id !== shop.id));
+          setIsFavorite(false);
+        } else {
+          setErrorToast('Failed to remove from favorites');
+          setTimeout(() => setErrorToast(null), 3000);
+        }
+      } else {
+        // Add to favorites
+        const result = await customerAPI.addToFavorites(shop.id);
+        if (result.success) {
+          setFavorites(prev => [...prev, shop]);
+          setIsFavorite(true);
+        } else {
+          setErrorToast('Failed to add to favorites');
+          setTimeout(() => setErrorToast(null), 3000);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setErrorToast('Something went wrong. Please try again.');
+      setTimeout(() => setErrorToast(null), 3000);
+    }
+  };
+
+  // Update isFavorite when favorites or shop changes
+  useEffect(() => {
+    if (shop && favorites.length >= 0) {
+      setIsFavorite(favorites.some(fav => fav.id === shop.id));
+    }
+  }, [shop, favorites]);
 
   const addToCart = (itemId) => {
     setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + 1 }));
@@ -273,6 +336,36 @@ export function ShopMenu() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen gradient-bg">
+        {/* Header */}
+        <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
+          <div className="p-4 flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-xl glass flex items-center justify-center cursor-pointer"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </motion.button>
+            <h1 className="font-bold text-white text-xl">Error</h1>
+          </div>
+        </div>
+        
+        <div className="p-6 flex items-center justify-center min-h-[60vh]">
+          <ErrorMessage
+            error={error.message}
+            type={error.type}
+            onRetry={fetchShopMenu}
+            className="max-w-md"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!shop) {
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
@@ -283,6 +376,14 @@ export function ShopMenu() {
 
   return (
     <div className="min-h-screen gradient-bg pb-32">
+      {/* Error Toast */}
+      {errorToast && (
+        <ErrorToast 
+          error={errorToast} 
+          onClose={() => setErrorToast(null)} 
+        />
+      )}
+      
       {/* Header */}
       <div className="glass border-b border-slate-700/50 sticky top-0 z-40 backdrop-blur-xl">
         <div className="p-4 flex items-center justify-between">
@@ -323,7 +424,22 @@ export function ShopMenu() {
               <p className="text-xs text-slate-400">{shop.category} • {shop.city}</p>
             </div>
           </div>
-          <div className="w-10" />
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleFavorite}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+              isFavorite
+                ? 'bg-pink-500/20 border border-pink-500/50'
+                : 'glass border border-slate-700/50'
+            }`}
+          >
+            <Heart className={`w-5 h-5 transition-colors ${
+              isFavorite
+                ? 'text-pink-500 fill-current'
+                : 'text-slate-400'
+            }`} />
+          </motion.button>
         </div>
       </div>
 
