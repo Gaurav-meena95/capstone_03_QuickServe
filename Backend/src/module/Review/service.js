@@ -2,6 +2,7 @@ const prisma = require('../../config/prismaClient');
 
 // Create a review for a shop
 exports.createReview = async (userId, reviewData) => {
+  console.log('🔍 Service received reviewData:', reviewData);
   const { shopId, orderId, rating, comment } = reviewData;
 
   // Validate rating
@@ -37,16 +38,22 @@ exports.createReview = async (userId, reviewData) => {
     }
   }
 
-  // Create the review
+  // Create the review - explicitly use lowercase status
+  const createData = {
+    userId,
+    shopId,
+    orderId: orderId || null,
+    rating,
+    comment: comment || null,
+    status: 'pending', // Explicitly set to lowercase pending
+  };
+  
+  console.log('🔍 About to create review with data:', createData);
+  console.log('🔍 Data type check:', typeof createData.status, createData.status);
+  console.log('🔍 Full data object:', JSON.stringify(createData, null, 2));
+  
   const review = await prisma.review.create({
-    data: {
-      userId,
-      shopId,
-      orderId: orderId || null,
-      rating,
-      comment: comment || null,
-      status: 'APPROVED', // Auto-approve reviews
-    },
+    data: createData,
     include: {
       user: {
         select: {
@@ -69,7 +76,7 @@ async function updateShopRating(shopId) {
   const reviews = await prisma.review.findMany({
     where: {
       shopId,
-      status: 'APPROVED',
+      status: 'approved',
     },
     select: {
       rating: true,
@@ -98,7 +105,7 @@ exports.getShopReviews = async (shopId, page = 1, limit = 10) => {
     prisma.review.findMany({
       where: {
         shopId,
-        status: 'APPROVED',
+        status: 'approved',
       },
       include: {
         user: {
@@ -118,7 +125,7 @@ exports.getShopReviews = async (shopId, page = 1, limit = 10) => {
     prisma.review.count({
       where: {
         shopId,
-        status: 'APPROVED',
+        status: 'approved',
       },
     }),
   ]);

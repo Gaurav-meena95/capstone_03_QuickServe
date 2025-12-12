@@ -196,7 +196,7 @@ export function ShopkeeperDashboard() {
     }
 
     try {
-      await handleUpdateOrderStatus(selectedOrderId, 'PREPARING', parseInt(preparationTime));
+      await handleUpdateOrderStatus(selectedOrderId, 'processing', parseInt(preparationTime));
       setShowPrepTimeModal(false);
       setSelectedOrderId(null);
       setPreparationTime('');
@@ -235,12 +235,12 @@ export function ShopkeeperDashboard() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      'PENDING': 'New',
-      'CONFIRMED': 'Confirmed',
-      'PREPARING': 'Preparing',
-      'READY': 'Ready',
-      'COMPLETED': 'Completed',
-      'CANCELLED': 'Cancelled'
+      'pending': 'New',
+      'confirmed': 'Confirmed',
+      'processing': 'Preparing',
+      'ready': 'Ready',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled'
     };
     return labels[status] || status;
   };
@@ -329,17 +329,17 @@ export function ShopkeeperDashboard() {
 
   // Filter active orders (not completed or cancelled)
   const activeOrders = orders.filter(
-    order => !['COMPLETED', 'CANCELLED'].includes(order.status)
+    order => !['completed', 'cancelled'].includes(order.status)
   );
 
   // Filter completed orders
   const completedOrders = orders.filter(
-    order => order.status === 'COMPLETED'
+    order => order.status === 'completed'
   );
 
   // Filter cancelled orders
   const cancelledOrders = orders.filter(
-    order => order.status === 'CANCELLED'
+    order => order.status === 'cancelled'
   );
 
   // Search function to filter orders by token
@@ -368,7 +368,7 @@ export function ShopkeeperDashboard() {
   today.setHours(0, 0, 0, 0);
   const todaysOrders = orders.filter(order => {
     const orderDate = new Date(order.placedAt);
-    return orderDate >= today && order.status !== 'CANCELLED';
+    return orderDate >= today && order.status !== 'cancelled';
   });
   const todaysRevenue = todaysOrders.reduce((sum, order) => sum + order.total, 0);
 
@@ -702,12 +702,12 @@ export function ShopkeeperDashboard() {
 
 
 
-                    {order.status === 'READY' && (
+                    {order.status === 'ready' && (
                       <div className="flex gap-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleUpdateOrderStatus(order.id, 'COMPLETED');
+                            handleUpdateOrderStatus(order.id, 'completed');
                           }}
                           className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
                         >
@@ -717,7 +717,7 @@ export function ShopkeeperDashboard() {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (confirm('Are you sure you want to cancel this order?')) {
-                              handleUpdateOrderStatus(order.id, 'CANCELLED');
+                              handleUpdateOrderStatus(order.id, 'cancelled');
                             }
                           }}
                           className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30 whitespace-nowrap"
@@ -728,15 +728,15 @@ export function ShopkeeperDashboard() {
                     )}
 
                     {/* Cancel button for other statuses */}
-                    {(order.status === 'PENDING' || order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
+                    {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing') && (
                       <div className="flex gap-2">
-                        {order.status === 'PENDING' && (
+                        {order.status === 'pending' && (
                           <motion.button
                             whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
                             whileTap={{ scale: 0.95 }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateOrderStatus(order.id, 'CONFIRMED');
+                              handleUpdateOrderStatus(order.id, 'confirmed');
                             }}
                             className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
                           >
@@ -751,7 +751,7 @@ export function ShopkeeperDashboard() {
                           </motion.button>
                         )}
 
-                        {order.status === 'CONFIRMED' && (
+                        {order.status === 'confirmed' && (
                           <motion.button
                             whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
                             whileTap={{ scale: 0.95 }}
@@ -772,11 +772,11 @@ export function ShopkeeperDashboard() {
                           </motion.button>
                         )}
 
-                        {order.status === 'PREPARING' && (
+                        {order.status === 'processing' && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpdateOrderStatus(order.id, 'READY');
+                              handleUpdateOrderStatus(order.id, 'ready');
                             }}
                             className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
                           >
@@ -788,7 +788,7 @@ export function ShopkeeperDashboard() {
                           onClick={(e) => {
                             e.stopPropagation();
                             if (confirm('Are you sure you want to cancel this order?')) {
-                              handleUpdateOrderStatus(order.id, 'CANCELLED');
+                              handleUpdateOrderStatus(order.id, 'cancelled');
                             }
                           }}
                           className="cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30"

@@ -3,6 +3,7 @@ const service = require('./service');
 // Create a review
 exports.createReview = async (req, res) => {
   try {
+    console.log('🔍 Review request body:', req.body);
     const review = await service.createReview(req.user.id, req.body);
     return res.status(201).json({
       success: true,
