@@ -239,6 +239,13 @@ export function ShopMenu() {
   const handleCheckout = () => {
     const token = localStorage.getItem('accessToken');
     
+    // Check if shop is closed before proceeding to checkout
+    if (shop && shop.status !== 'open') {
+      setErrorToast('Sorry, this shop is currently closed. You cannot place orders at this time.');
+      setTimeout(() => setErrorToast(null), 4000);
+      return;
+    }
+    
     // If not logged in, redirect to login with return URL
     if (!token) {
       const cartItems = Object.entries(cart).map(([itemId, quantity]) => ({
@@ -267,7 +274,6 @@ export function ShopMenu() {
       shopSlug: shop.slug || slug, // Save both ID and slug for flexibility
       items: cartItems,
     }));
-    
     navigate('/customer/checkout');
   };
 
@@ -421,7 +427,14 @@ export function ShopMenu() {
             </div>
             <div className="text-center">
               <h1 className="font-bold text-white">{shop.name}</h1>
-              <p className="text-xs text-slate-400">{shop.category} • {shop.city}</p>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <span className="text-slate-400">{shop.category} • {shop.city}</span>
+                {shop.status !== 'open' && (
+                  <span className="px-2 py-0.5 bg-red-500/20 border border-red-500/50 rounded-full text-red-400 font-semibold">
+                    Closed
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <motion.button

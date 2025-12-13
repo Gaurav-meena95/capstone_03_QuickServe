@@ -65,8 +65,8 @@ async function verifyDemoData() {
 
     console.log('\n✅ Demo data verification complete!');
     console.log('\n🔑 Ready to test with:');
-    console.log('   Customer: customer@demo.com / password123');
-    console.log('   Shopkeeper: shopkeeper@demo.com / password123');
+    console.log('   Customer: customer@demo.com / password123!');
+    console.log('   Shopkeeper: shopkeeper@demo.com / password123!');
 
   } catch (error) {
     console.error('❌ Error verifying demo data:', error);

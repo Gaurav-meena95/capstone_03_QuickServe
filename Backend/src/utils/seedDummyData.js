@@ -722,8 +722,8 @@ async function seedDummyData() {
     console.log(`   🍽️ Menu Items: ${allCreatedMenuItems.length} across all shops`);
     console.log('');
     console.log('🔑 Demo Credentials:');
-    console.log('   Customer: customer@demo.com / password123');
-    console.log('   Shopkeeper: shopkeeper@demo.com / password123');
+    console.log('   Customer: customer@demo.com / password123!');
+    console.log('   Shopkeeper: shopkeeper@demo.com / password123!');
     
   } catch (error) {
     console.error('❌ Error seeding demo data:', error);

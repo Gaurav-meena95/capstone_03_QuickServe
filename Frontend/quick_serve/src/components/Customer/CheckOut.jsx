@@ -70,6 +70,7 @@ export function Checkout() {
         }).filter(Boolean);
         
         console.log('Cart items with details:', itemsWithDetails); // Debug log
+        console.log('Shop status:', result.data.shop.status); // Debug log for shop status
         setCartItems(itemsWithDetails);
       } else {
         console.error('Failed to fetch shop details:', result.error);
@@ -137,7 +138,14 @@ export function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
+
     if (!cartData || cartItems.length === 0) return;
+
+    // Check if shop is closed before placing order
+    if (shopData && shopData.status !== 'open') {
+      setError('Sorry, this shop is currently closed. You cannot place orders at this time.');
+      return;
+    }
 
     // Validate scheduled time if order type is SCHEDULED
     if (orderType === 'SCHEDULED' && !scheduledTime) {
@@ -180,7 +188,7 @@ export function Checkout() {
           navigate(`/customer/order-tracking/${result.data.order.id}`);
         }, 1000);
       } else {
-        throw new Error(result.error || 'Failed to create order');
+        throw new Error(result.error || 'Failed to create order or Shop is Closed');
       }
     } catch (error) {
       console.error('Error placing order:', error);
@@ -210,6 +218,25 @@ export function Checkout() {
       </div>
 
       <div className="p-6 space-y-6">
+        {/* Shop Status Warning */}
+        {shopData && shopData.status !== 'open' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="glass rounded-2xl p-4 border-2 border-red-500/50 bg-red-500/10"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                <span className="text-red-400 text-xl">⚠️</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-red-400">Shop is Currently Closed</h3>
+                <p className="text-sm text-red-300">This shop is not accepting orders at the moment.</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Cart Items Review */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -376,7 +403,7 @@ export function Checkout() {
           disabled={loading}
           className="w-full h-14 gradient-orange rounded-2xl font-bold text-slate-900 glow-orange cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3"
         >
-          {loading ? (
+          {loading ?  (
             <>
               <motion.div
                 className="w-5 h-5 border-2 border-slate-900/30 border-t-slate-900 rounded-full"

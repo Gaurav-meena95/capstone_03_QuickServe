@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ChevronLeft, ChevronRight, Search, Image } from "lucide-react";
 
 export function MenuManager() {
   const [items, setItems] = useState([]);
@@ -11,7 +11,9 @@ export function MenuManager() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6); // 6 items per page
   const [searchQuery, setSearchQuery] = useState('');
-  
+
+  const [preview, setPreview] = useState({ ItemImage: null });
+
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -22,13 +24,12 @@ export function MenuManager() {
     popular: false,
     quantity: 1
   });
-
   const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL;
 
   // Filter items based on search query
   const filteredItems = items.filter(item => {
     if (!searchQuery.trim()) return true;
-    
+
     const query = searchQuery.toLowerCase();
     return (
       item.name.toLowerCase().includes(query) ||
@@ -62,6 +63,83 @@ export function MenuManager() {
     fetchMenuItems();
   }, []);
 
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.createElement('img');
+      
+      img.onload = () => {
+        // Set maximum dimensions
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        let { width, height } = img;
+        
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        
+        // Clean up object URL
+        URL.revokeObjectURL(img.src);
+        resolve(compressedBase64);
+      };
+      
+      img.onerror = (error) => {
+        URL.revokeObjectURL(img.src);
+        reject(error);
+      };
+      
+      // Create object URL for the image
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+
+  const handleImageChange = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setFormData(prev => ({
+      ...prev,
+      [type]: file
+    }));
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(prev => ({
+        ...prev,
+        [type]: reader.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+const removeImage = (type)=>{
+  setFormData(prev =>({...prev,[type] : null}))
+  setPreview(prev => ({...prev,[type]:null }))
+}
+
+
+
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
@@ -71,7 +149,7 @@ export function MenuManager() {
           'Authorization': `JWT ${token}`
         }
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         setItems(data.menuItems || []);
@@ -95,10 +173,10 @@ export function MenuManager() {
           'Authorization': `JWT ${token}`
         }
       });
-      
+
       const data = await response.json();
       if (response.ok) {
-        setItems(items.map(item => 
+        setItems(items.map(item =>
           item.id === itemId ? data.menuItem : item
         ));
       } else {
@@ -120,13 +198,16 @@ export function MenuManager() {
       description: '',
       available: true,
       popular: false,
-      quantity: 1
+      quantity: 1,
+      ItemImage: null
     });
+    setPreview({ ItemImage: null });
     setShowAddForm(true);
   };
 
   const handleEditItem = (item) => {
     setEditingItem(item);
+    console.log(item)
     setFormData({
       name: item.name,
       price: item.price,
@@ -135,14 +216,17 @@ export function MenuManager() {
       description: item.description || '',
       available: item.available,
       popular: item.popular,
-      quantity: 1
+      quantity: 1,
+      ItemImage: null
     });
+    // Set preview to existing image if available
+    setPreview({ ItemImage: item.image || null });
     setShowAddForm(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.name.trim()) {
       alert('Name is required');
@@ -152,30 +236,32 @@ export function MenuManager() {
       alert('Price must be greater than 0');
       return;
     }
-    if (formData.imageUrl && !isValidUrl(formData.imageUrl)) {
-      alert('Please enter a valid image URL');
-      return;
-    }
+    let imageBase64 = null;
+    if (formData.ItemImage && formData.ItemImage instanceof File) {
+        imageBase64 = await convertFileToBase64(formData.ItemImage);
+      } else if (preview.ItemImage) {
+        imageBase64 = preview.ItemImage;
+      }
 
     try {
       setSubmitting(true);
       const token = localStorage.getItem('accessToken');
-      
+
       const payload = {
         name: formData.name,
         price: parseFloat(formData.price),
         category: formData.category,
-        imageUrl: formData.imageUrl,
+        imageUrl: imageBase64 || formData.imageUrl || null, // Use uploaded image or fallback to URL
         description: formData.description || null,
         available: formData.available,
         popular: formData.popular,
         quantity: parseInt(formData.quantity)
       };
 
-      const url = editingItem 
+      const url = editingItem
         ? `${backend}/api/menu/${editingItem.id}`
         : `${backend}/api/menu`;
-      
+
       const method = editingItem ? 'PATCH' : 'POST';
 
       const response = await fetch(url, {
@@ -186,11 +272,11 @@ export function MenuManager() {
         },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         if (editingItem) {
-          setItems(items.map(item => 
+          setItems(items.map(item =>
             item.id === editingItem.id ? data.menuItem : item
           ));
           alert('Item updated successfully!');
@@ -200,6 +286,19 @@ export function MenuManager() {
         }
         setShowAddForm(false);
         setEditingItem(null);
+        // Reset form and preview
+        setFormData({
+          name: '',
+          price: '',
+          category: '',
+          imageUrl: '',
+          description: '',
+          available: true,
+          popular: false,
+          quantity: 1,
+          ItemImage: null
+        });
+        setPreview({ ItemImage: null });
       } else {
         alert('Failed to save item: ' + data.message);
       }
@@ -224,7 +323,7 @@ export function MenuManager() {
           'Authorization': `JWT ${token}`
         }
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         setItems(items.filter(item => item.id !== itemId));
@@ -276,7 +375,10 @@ export function MenuManager() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                setPreview({ ItemImage: null });
+              }}
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -290,7 +392,10 @@ export function MenuManager() {
                     {editingItem ? 'Edit Item' : 'Add New Item'}
                   </h2>
                   <button
-                    onClick={() => setShowAddForm(false)}
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setPreview({ ItemImage: null });
+                    }}
                     className="w-8 h-8 rounded-lg glass flex items-center justify-center hover:bg-red-500/20 transition-colors cursor-pointer"
                   >
                     <X className="w-5 h-5 text-slate-400" />
@@ -305,7 +410,7 @@ export function MenuManager() {
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
                       placeholder="e.g., Classic Burger"
                       required
@@ -321,7 +426,7 @@ export function MenuManager() {
                       step="0.01"
                       min="0"
                       value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
                       placeholder="12.99"
                       required
@@ -335,24 +440,66 @@ export function MenuManager() {
                     <input
                       type="text"
                       value={formData.category}
-                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
                       placeholder="e.g., Burgers"
                     />
                   </div>
+                  {/* upload iteam Image */}
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                      className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none"
-                      placeholder="https://example.com/image.jpg"
-                    />
+                    <label className="block text-sm font-medium text-slate-300 mb-3">Item Image</label>
+                    <motion.div
+                      className="relative group"
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <div className={`relative w-full aspect-[16/9] rounded-2xl border-2 border-dashed overflow-hidden transition-all ${preview.ItemImage
+                        ? 'border-blue-500/50 glass'
+                        : 'border-slate-600 glass hover:border-green-500/50'
+                        }`}>
+                        {preview.ItemImage ? (
+                          <div className="relative w-full h-full">
+                            <img
+                              src={preview.ItemImage}
+                              alt="Cover"
+                              className="w-full h-full object-cover"
+                            />
+                            <motion.button
+                              type="button"
+                              onClick={() => removeImage('ItemImage')}
+                              whileHover={{ scale: 1.1, rotate: 90 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="absolute top-3 right-3 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
+                            >
+
+                              <X className="w-5 h-5" />
+                            </motion.button>
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                            <motion.div
+                              animate={{ y: [0, -10, 0] }}
+                              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                            >
+                              <Image className="w-16 h-16 mx-auto text-slate-400 mb-3" />
+                            </motion.div>
+                            <p className="text-sm text-slate-300 font-medium">Click to upload cover</p>
+                            <p className="text-xs text-slate-500 mt-2">Landscape, at least 1200x400px</p>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          name="ItemImage"
+                          accept="image/*"
+                          onChange={(e) => handleImageChange(e, 'ItemImage')}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                      </div>
+                    </motion.div>
                   </div>
+
+
 
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -360,7 +507,7 @@ export function MenuManager() {
                     </label>
                     <textarea
                       value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all outline-none min-h-20 resize-none"
                       placeholder="Optional description..."
                     />
@@ -371,7 +518,7 @@ export function MenuManager() {
                       <input
                         type="checkbox"
                         checked={formData.available}
-                        onChange={(e) => setFormData({...formData, available: e.target.checked})}
+                        onChange={(e) => setFormData({ ...formData, available: e.target.checked })}
                         className="w-5 h-5 rounded border-slate-600 text-green-500 focus:ring-green-500/20 cursor-pointer"
                       />
                       <span className="text-sm text-slate-300">Available</span>
@@ -381,7 +528,7 @@ export function MenuManager() {
                       <input
                         type="checkbox"
                         checked={formData.popular}
-                        onChange={(e) => setFormData({...formData, popular: e.target.checked})}
+                        onChange={(e) => setFormData({ ...formData, popular: e.target.checked })}
                         className="w-5 h-5 rounded border-slate-600 text-orange-500 focus:ring-orange-500/20 cursor-pointer"
                       />
                       <span className="text-sm text-slate-300">Popular</span>
@@ -391,7 +538,10 @@ export function MenuManager() {
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setShowAddForm(false)}
+                      onClick={() => {
+                        setShowAddForm(false);
+                        setPreview({ ItemImage: null });
+                      }}
                       className="flex-1 h-12 glass rounded-xl text-slate-300 hover:bg-slate-700/50 transition-all font-medium cursor-pointer"
                     >
                       Cancel
@@ -569,19 +719,18 @@ export function MenuManager() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ y: -5 }}
-                className={`glass rounded-2xl overflow-hidden ${
-                  !item.available ? 'opacity-60' : ''
-                }`}
+                className={`glass rounded-2xl overflow-hidden ${!item.available ? 'opacity-60' : ''
+                  }`}
               >
                 {/* Image */}
                 <div className="relative h-40 overflow-hidden">
-                  <img 
+                  <img
                     src={item.image || 'https://via.placeholder.com/400x300?text=No+Image'}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 to-transparent" />
-                  
+
                   {/* Badges */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
                     {item.popular && (
@@ -625,9 +774,8 @@ export function MenuManager() {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => toggleAvailability(item.id)}
-                        className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${
-                          item.available ? 'bg-green-500' : 'bg-slate-600'
-                        }`}
+                        className={`relative w-14 h-8 rounded-full p-1 transition-colors cursor-pointer ${item.available ? 'bg-green-500' : 'bg-slate-600'
+                          }`}
                       >
                         <motion.div
                           className="bg-white w-6 h-6 rounded-full shadow-lg"
@@ -677,16 +825,15 @@ export function MenuManager() {
               whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
-                currentPage === 1
-                  ? 'glass text-slate-500 cursor-not-allowed opacity-50'
-                  : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${currentPage === 1
+                ? 'glass text-slate-500 cursor-not-allowed opacity-50'
+                : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
+                }`}
             >
               <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Previous</span>
             </motion.button>
-            
+
             <div className="flex items-center gap-2">
               {/* Mobile: Show only current page and total */}
               <div className="sm:hidden">
@@ -696,7 +843,7 @@ export function MenuManager() {
                   </span>
                 </div>
               </div>
-              
+
               {/* Desktop: Show all page numbers (max 7) */}
               <div className="hidden sm:flex items-center gap-2">
                 {totalPages <= 7 ? (
@@ -707,11 +854,10 @@ export function MenuManager() {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setCurrentPage(i + 1)}
-                      className={`w-10 h-10 rounded-xl font-medium transition-all ${
-                        safePage === i + 1
-                          ? 'gradient-orange text-slate-900'
-                          : 'glass text-slate-300 hover:bg-slate-700/50'
-                      }`}
+                      className={`w-10 h-10 rounded-xl font-medium transition-all ${safePage === i + 1
+                        ? 'gradient-orange text-slate-900'
+                        : 'glass text-slate-300 hover:bg-slate-700/50'
+                        }`}
                     >
                       {i + 1}
                     </motion.button>
@@ -735,28 +881,27 @@ export function MenuManager() {
                         )}
                       </>
                     )}
-                    
+
                     {/* Current page and neighbors */}
                     {[safePage - 1, safePage, safePage + 1].map(pageNum => {
                       if (pageNum < 1 || pageNum > totalPages) return null;
-                      
+
                       return (
                         <motion.button
                           key={pageNum}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-10 h-10 rounded-xl font-medium transition-all ${
-                            safePage === pageNum
-                              ? 'gradient-orange text-slate-900'
-                              : 'glass text-slate-300 hover:bg-slate-700/50'
-                          }`}
+                          className={`w-10 h-10 rounded-xl font-medium transition-all ${safePage === pageNum
+                            ? 'gradient-orange text-slate-900'
+                            : 'glass text-slate-300 hover:bg-slate-700/50'
+                            }`}
                         >
                           {pageNum}
                         </motion.button>
                       );
                     })}
-                    
+
                     {/* Last page */}
                     {safePage < totalPages - 1 && (
                       <>
@@ -777,17 +922,16 @@ export function MenuManager() {
                 )}
               </div>
             </div>
-            
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
-                currentPage === totalPages
-                  ? 'glass text-slate-500 cursor-not-allowed opacity-50'
-                  : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${currentPage === totalPages
+                ? 'glass text-slate-500 cursor-not-allowed opacity-50'
+                : 'glass text-slate-300 hover:bg-slate-700/50 cursor-pointer'
+                }`}
             >
               <span className="hidden sm:inline">Next</span>
               <ChevronRight className="w-4 h-4" />
