@@ -32,20 +32,20 @@ export function LoginPage() {
             const loginUser = await res.json()
             if (!res.ok) throw new Error(loginUser.message || 'Login Failed')
 
-            console.log('🔑 Login response:', loginUser);
+            console.log('Login response:', loginUser);
             
             if (loginUser.token) {
                 localStorage.setItem('accessToken', loginUser.token)
-                console.log('✅ Access token stored');
+                console.log(' Access token stored');
             } else {
-                console.error('❌ No token in login response');
+                console.error(' No token in login response');
             }
             if (loginUser.refreshToken) {
                 localStorage.setItem('refreshToken', loginUser.refreshToken)
-                console.log('✅ Refresh token stored');
+                console.log('  Refresh token stored');
             }
             localStorage.setItem('userRole', selectedRole)
-            console.log('✅ User role stored:', selectedRole);
+            console.log('User role stored:', selectedRole);
             
             // Navigate based on role - ShopCheck will handle shop verification
             if (selectedRole === 'CUSTOMER') {
@@ -190,7 +190,7 @@ export function LoginPage() {
                                         />
                                     )}
                                     <div className="relative z-10 flex items-center gap-2">
-                                        {loading ? (
+                                        {loading && role === 'CUSTOMER' ? (
                                             <>
                                                 <motion.div
                                                     className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full"
@@ -225,7 +225,7 @@ export function LoginPage() {
                                         />
                                     )}
                                     <div className="relative z-10 flex items-center gap-2">
-                                        {loading ? (
+                                        {loading && role === 'SHOPKEEPER'? (
                                             <>
                                                 <motion.div
                                                     className="w-4 h-4 border-2 border-orange-500/30 border-t-orange-500 rounded-full"

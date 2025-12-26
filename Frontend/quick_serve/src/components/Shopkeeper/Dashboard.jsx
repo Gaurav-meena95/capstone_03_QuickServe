@@ -5,12 +5,12 @@ import { shopkeeperAPI, reviewsAPI } from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { NotificationPanel } from '../Notification/NotificationPanel';
 import { useShopData } from '../../App';
-import { 
-  validatePreparationTime, 
-  calculateTimerState, 
-  formatTime, 
+import {
+  validatePreparationTime,
+  calculateTimerState,
+  formatTime,
   getTimerColor,
-  isOrderPreparing 
+  isOrderPreparing
 } from '../../utils/timerUtils';
 
 const API_BASE_URL = import.meta.env.VITE_PUBLIC_BACKEND_URL;
@@ -42,10 +42,10 @@ export function ShopkeeperDashboard() {
         const result = await shopkeeperAPI.getDashboard();
 
         if (result.success) {
-          console.log('✅ Dashboard data received from backend:', result.data);
+          console.log('Dashboard data received from backend:', result.data);
           setDashboardData(result.data);
           setError(null); // Clear any previous errors
-          
+
           // Update global shop context with latest data
           if (result.data.shop && !shopData) {
             setShopData({
@@ -55,7 +55,7 @@ export function ShopkeeperDashboard() {
             });
           }
         } else {
-          console.error('❌ Dashboard API failed:', result.error);
+          console.error('Dashboard API failed:', result.error);
           setError(`Unable to load dashboard data: ${result.error}`);
         }
       } catch (err) {
@@ -74,10 +74,10 @@ export function ShopkeeperDashboard() {
     try {
       setRefreshing(true);
       const result = await shopkeeperAPI.getDashboard();
-      
+
       if (result.success) {
         setDashboardData(result.data);
-        
+
         // Update shop context with latest data
         if (result.data.shop) {
           setShopData({
@@ -86,9 +86,9 @@ export function ShopkeeperDashboard() {
             cuisineType: result.data.shop.category
           });
         }
-        
+
         if (result.fallbackUsed) {
-          setError('📍 Showing demo data - backend unavailable');
+          setError('Showing demo data - backend unavailable');
         } else {
           setError(null);
         }
@@ -110,9 +110,9 @@ export function ShopkeeperDashboard() {
           const result = await reviewsAPI.getMyShopReviews();
           if (result.success) {
             setReviews(result.data.reviews || []);
-            console.log('✅ Reviews loaded from backend');
+            console.log('Reviews loaded from backend');
           } else {
-            console.error('❌ Failed to load reviews:', result.error);
+            console.error('Failed to load reviews:', result.error);
           }
         } catch (err) {
           console.error('Error fetching reviews:', err);
@@ -126,7 +126,7 @@ export function ShopkeeperDashboard() {
   // Timer logic for preparing orders using utility functions
   useEffect(() => {
     const intervals = {};
-    
+
     if (dashboardData && dashboardData.orders) {
       const preparingOrders = dashboardData.orders.filter(order => isOrderPreparing(order));
 
@@ -151,21 +151,21 @@ export function ShopkeeperDashboard() {
 
   const handleUpdateOrderStatus = async (orderId, newStatus, prepTime = null) => {
     try {
-      console.log('🔄 Updating order status:', orderId, newStatus);
+      console.log('Updating order status:', orderId, newStatus);
       const result = await shopkeeperAPI.updateOrderStatus(orderId, newStatus, prepTime);
 
       if (result.success) {
-        console.log('✅ Order status updated');
-        
+        console.log('Order status updated');
+
         // Refresh dashboard data
         const dashResult = await shopkeeperAPI.getDashboard();
         if (dashResult.success) {
           setDashboardData(dashResult.data);
         } else {
-          console.error('❌ Failed to refresh dashboard after order update:', dashResult.error);
+          console.error('Failed to refresh dashboard after order update:', dashResult.error);
         }
       } else {
-        console.error('❌ Failed to update order status:', result.error);
+        console.error('Failed to update order status:', result.error);
       }
     } catch (err) {
       console.error('Error updating order status:', err);
@@ -181,7 +181,7 @@ export function ShopkeeperDashboard() {
 
   const handlePreparationTimeChange = (value) => {
     setPreparationTime(value);
-    
+
     // Validate in real-time
     const validation = validatePreparationTime(value);
     setPreparationTimeError(validation.isValid ? '' : validation.error);
@@ -189,7 +189,7 @@ export function ShopkeeperDashboard() {
 
   const confirmStartPreparing = async () => {
     const validation = validatePreparationTime(preparationTime);
-    
+
     if (!validation.isValid) {
       setPreparationTimeError(validation.error);
       return;
@@ -281,7 +281,7 @@ export function ShopkeeperDashboard() {
               />
             </div>
           </div>
-          
+
           {/* Loading Text */}
           <motion.div
             animate={{ opacity: [0.5, 1, 0.5] }}
@@ -290,22 +290,22 @@ export function ShopkeeperDashboard() {
             <h2 className="text-3xl font-bold text-white mb-2">Loading Dashboard</h2>
             <p className="text-slate-400">Preparing your shop management interface...</p>
           </motion.div>
-          
+
           {/* Loading Progress Dots */}
           <div className="flex justify-center gap-3 mt-6">
             {[0, 1, 2, 3].map((i) => (
               <motion.div
                 key={i}
                 className="w-3 h-3 rounded-full bg-gradient-to-r from-orange-500 to-blue-500"
-                animate={{ 
-                  scale: [1, 1.8, 1], 
+                animate={{
+                  scale: [1, 1.8, 1],
                   opacity: [0.3, 1, 0.3],
                   y: [0, -10, 0]
                 }}
-                transition={{ 
-                  duration: 1.8, 
-                  repeat: Infinity, 
-                  delay: i * 0.2 
+                transition={{
+                  duration: 1.8,
+                  repeat: Infinity,
+                  delay: i * 0.2
                 }}
               />
             ))}
@@ -345,16 +345,16 @@ export function ShopkeeperDashboard() {
   // Search function to filter orders by token
   const filterOrdersBySearch = (ordersList) => {
     if (!searchQuery.trim()) return ordersList;
-    
+
     const query = searchQuery.toLowerCase().trim();
     return ordersList.filter(order => {
       const token = order.token.toLowerCase();
       const orderNumber = order.orderNumber?.toLowerCase() || '';
       const customerName = order.customer?.name?.toLowerCase() || '';
-      
-      return token.includes(query) || 
-             orderNumber.includes(query) || 
-             customerName.includes(query);
+
+      return token.includes(query) ||
+        orderNumber.includes(query) ||
+        customerName.includes(query);
     });
   };
 
@@ -478,9 +478,9 @@ export function ShopkeeperDashboard() {
               </div>
               {searchQuery && (
                 <div className="mt-2 text-xs text-slate-400">
-                  Searching in: {activeTab === 'active' ? 'Active Orders' : 
-                                activeTab === 'completed' ? 'Completed Orders' : 
-                                activeTab === 'cancelled' ? 'Cancelled Orders' : 'Reviews'}
+                  Searching in: {activeTab === 'active' ? 'Active Orders' :
+                    activeTab === 'completed' ? 'Completed Orders' :
+                      activeTab === 'cancelled' ? 'Cancelled Orders' : 'Reviews'}
                 </div>
               )}
             </div>
@@ -556,27 +556,27 @@ export function ShopkeeperDashboard() {
           className="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide"
         >
           {[
-            { 
-              key: 'active', 
-              label: 'Active Orders', 
+            {
+              key: 'active',
+              label: 'Active Orders',
               count: searchQuery ? filteredActiveOrders.length : activeOrders.length,
               totalCount: activeOrders.length
             },
-            { 
-              key: 'completed', 
-              label: 'Completed Orders', 
+            {
+              key: 'completed',
+              label: 'Completed Orders',
               count: searchQuery ? filteredCompletedOrders.length : completedOrders.length,
               totalCount: completedOrders.length
             },
-            { 
-              key: 'cancelled', 
-              label: 'Cancelled Orders', 
+            {
+              key: 'cancelled',
+              label: 'Cancelled Orders',
               count: searchQuery ? filteredCancelledOrders.length : cancelledOrders.length,
               totalCount: cancelledOrders.length
             },
-            { 
-              key: 'reviews', 
-              label: 'Reviews', 
+            {
+              key: 'reviews',
+              label: 'Reviews',
               count: shop.totalRatings,
               totalCount: shop.totalRatings
             },
@@ -586,19 +586,17 @@ export function ShopkeeperDashboard() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer flex items-center gap-1.5 sm:gap-2 ${
-                activeTab === tab.key
-                  ? 'gradient-orange text-slate-900'
-                  : 'glass text-slate-300'
-              }`}
+              className={`px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap cursor-pointer flex items-center gap-1.5 sm:gap-2 ${activeTab === tab.key
+                ? 'gradient-orange text-slate-900'
+                : 'glass text-slate-300'
+                }`}
             >
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-bold ${
-                activeTab === tab.key
-                  ? 'bg-slate-900/30 text-slate-900'
-                  : 'bg-slate-700/50 text-slate-400'
-              }`}>
+              <span className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === tab.key
+                ? 'bg-slate-900/30 text-slate-900'
+                : 'bg-slate-700/50 text-slate-400'
+                }`}>
                 {tab.count}
               </span>
             </motion.button>
@@ -623,271 +621,271 @@ export function ShopkeeperDashboard() {
               </div>
             </div>
 
-          {filteredActiveOrders.length === 0 ? (
-            <div className="glass rounded-2xl p-12 text-center">
-              <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400 text-lg">
-                {searchQuery ? 'No orders match your search' : 'No active orders'}
-              </p>
-              <p className="text-slate-500 text-sm mt-2">
-                {searchQuery ? 'Try a different search term' : 'New orders will appear here'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredActiveOrders.map((order, index) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 * index }}
-                  whileHover={{ y: -5 }}
-                  className={`glass rounded-2xl p-4 sm:p-6 cursor-pointer border-2 transition-all ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'glow-orange' : ''
-                    } ${getStatusColor(order.status)}`}
-                >
-                  <div className="flex items-start justify-between mb-4 gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                        <motion.div
-                          className={`text-2xl sm:text-3xl font-bold ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'text-orange-400' :
+            {filteredActiveOrders.length === 0 ? (
+              <div className="glass rounded-2xl p-12 text-center">
+                <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 text-lg">
+                  {searchQuery ? 'No orders match your search' : 'No active orders'}
+                </p>
+                <p className="text-slate-500 text-sm mt-2">
+                  {searchQuery ? 'Try a different search term' : 'New orders will appear here'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filteredActiveOrders.map((order, index) => (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 * index }}
+                    whileHover={{ y: -5 }}
+                    className={`glass rounded-2xl p-4 sm:p-6 cursor-pointer border-2 transition-all ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'glow-orange' : ''
+                      } ${getStatusColor(order.status)}`}
+                  >
+                    <div className="flex items-start justify-between mb-4 gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                          <motion.div
+                            className={`text-2xl sm:text-3xl font-bold ${order.status === 'PENDING' || order.status === 'CONFIRMED' ? 'text-orange-400' :
                               order.status === 'PREPARING' ? 'text-blue-400' :
                                 'text-green-400'
-                            }`}
-                          animate={order.status === 'PENDING' ? {
-                            scale: [1, 1.1, 1],
-                          } : {}}
-                          transition={{
-                            duration: 1,
-                            repeat: order.status === 'PENDING' ? Infinity : 0,
-                          }}
-                        >
-                          #{order.token.split('-')[1] || order.token}
-                        </motion.div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-bold text-sm sm:text-base truncate">{order.customer?.name || 'Customer'}</p>
-                          <p className="text-xs text-slate-400">{getTimeAgo(order.placedAt)}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {order.status === 'PENDING' && (
-                      <motion.div
-                        animate={{
-                          boxShadow: [
-                            "0 0 0px rgba(249, 115, 22, 0)",
-                            "0 0 15px rgba(249, 115, 22, 0.6)",
-                            "0 0 0px rgba(249, 115, 22, 0)",
-                          ]
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                        className="px-2 sm:px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0"
-                      >
-                        NEW
-                      </motion.div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1 mb-4">
-                    {order.items?.map((item, idx) => (
-                      <p key={idx} className="text-sm text-slate-300">
-                        • {item.menuItem?.name || 'Item'} x{item.quantity}
-                      </p>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
-                    <span className="text-xl font-bold text-white">
-                      ₹{order.total.toFixed(2)}
-                    </span>
-
-
-
-                    {order.status === 'ready' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateOrderStatus(order.id, 'completed');
-                          }}
-                          className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
-                        >
-                          Complete
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('Are you sure you want to cancel this order?')) {
-                              handleUpdateOrderStatus(order.id, 'cancelled');
-                            }
-                          }}
-                          className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30 whitespace-nowrap"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Cancel button for other statuses */}
-                    {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing') && (
-                      <div className="flex gap-2">
-                        {order.status === 'pending' && (
-                          <motion.button
-                            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUpdateOrderStatus(order.id, 'confirmed');
+                              }`}
+                            animate={order.status === 'PENDING' ? {
+                              scale: [1, 1.1, 1],
+                            } : {}}
+                            transition={{
+                              duration: 1,
+                              repeat: order.status === 'PENDING' ? Infinity : 0,
                             }}
-                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
                           >
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                              animate={{ x: [-100, 100] }}
-                              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-                            />
-                            <span className="relative z-10 flex items-center gap-1">
-                              ✅ Accept
-                            </span>
-                          </motion.button>
-                        )}
-
-                        {order.status === 'confirmed' && (
-                          <motion.button
-                            whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartPreparing(order.id);
-                            }}
-                            className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
-                          >
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
-                              animate={{ x: [-100, 100] }}
-                              transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
-                            />
-                            <span className="relative z-10 flex items-center gap-1">
-                              🚀 Start
-                            </span>
-                          </motion.button>
-                        )}
-
-                        {order.status === 'processing' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUpdateOrderStatus(order.id, 'ready');
-                            }}
-                            className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
-                          >
-                            Ready
-                          </button>
-                        )}
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('Are you sure you want to cancel this order?')) {
-                              handleUpdateOrderStatus(order.id, 'cancelled');
-                            }
-                          }}
-                          className="cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Real-time Countdown Timer for Preparing Orders */}
-                  {isOrderPreparing(order) && (
-                    <div className="mt-4 pt-4 border-t border-slate-700/50">
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-16 h-16">
-                          <svg className="w-full h-full -rotate-90">
-                            <circle
-                              cx="32"
-                              cy="32"
-                              r="28"
-                              stroke="rgba(59, 130, 246, 0.2)"
-                              strokeWidth="4"
-                              fill="none"
-                            />
-                            <motion.circle
-                              cx="32"
-                              cy="32"
-                              r="28"
-                              stroke={orderTimers[order.id]?.isOvertime ? "#f97316" : "#3b82f6"}
-                              strokeWidth="4"
-                              fill="none"
-                              strokeLinecap="round"
-                              animate={{ 
-                                pathLength: (orderTimers[order.id]?.progress || 0) / 100 
-                              }}
-                              transition={{ duration: 0.5 }}
-                              style={{
-                                strokeDasharray: "175.9",
-                                strokeDashoffset: `${175.9 * (1 - (orderTimers[order.id]?.progress || 0) / 100)}`,
-                              }}
-                            />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Clock className={`w-6 h-6 ${orderTimers[order.id] ? getTimerColor(orderTimers[order.id]) : 'text-blue-400'}`} />
+                            #{order.token.split('-')[1] || order.token}
+                          </motion.div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-bold text-sm sm:text-base truncate">{order.customer?.name || 'Customer'}</p>
+                            <p className="text-xs text-slate-400">{getTimeAgo(order.placedAt)}</p>
                           </div>
                         </div>
-                        <div className="flex-1">
-                          {orderTimers[order.id] ? (
-                            <>
-                              <p className={`text-xs ${orderTimers[order.id].isOvertime ? 'text-orange-400' : 'text-blue-400'}`}>
-                                {orderTimers[order.id].isOvertime ? 'Overtime' : 'Time Remaining'}
-                              </p>
-                              <motion.p 
-                                className={`text-lg font-bold ${getTimerColor(orderTimers[order.id])}`}
-                                animate={orderTimers[order.id].isOvertime ? {
-                                  scale: [1, 1.05, 1],
-                                } : {}}
-                                transition={{ duration: 1, repeat: orderTimers[order.id].isOvertime ? Infinity : 0 }}
-                              >
-                                {orderTimers[order.id].isOvertime ? '+' : ''}{formatTime(orderTimers[order.id].remaining)}
-                              </motion.p>
-                              <p className="text-xs text-slate-500">
-                                Expected: {order.preparationTime} min
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-xs text-slate-400">Preparation Time</p>
-                              <p className="text-white font-bold">{order.preparationTime} minutes</p>
-                              <p className="text-xs text-slate-500">
-                                Started: {new Date(order.preparingAt).toLocaleTimeString('en-IN', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </p>
-                            </>
-                          )}
-                        </div>
                       </div>
-                      
-                      {/* Overtime Alert */}
-                      {orderTimers[order.id]?.isOvertime && (
+
+                      {order.status === 'PENDING' && (
                         <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="mt-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg"
+                          animate={{
+                            boxShadow: [
+                              "0 0 0px rgba(249, 115, 22, 0)",
+                              "0 0 15px rgba(249, 115, 22, 0.6)",
+                              "0 0 0px rgba(249, 115, 22, 0)",
+                            ]
+                          }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="px-2 sm:px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0"
                         >
-                          <p className="text-xs text-orange-400 font-medium">
-                            🔥 Order is taking longer than expected
-                          </p>
+                          NEW
                         </motion.div>
                       )}
                     </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+
+                    <div className="space-y-1 mb-4">
+                      {order.items?.map((item, idx) => (
+                        <p key={idx} className="text-sm text-slate-300">
+                          • {item.menuItem?.name || 'Item'} x{item.quantity}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                      <span className="text-xl font-bold text-white">
+                        ₹{order.total.toFixed(2)}
+                      </span>
+
+
+
+                      {order.status === 'ready' && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateOrderStatus(order.id, 'completed');
+                            }}
+                            className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-green-500/20 border border-green-500/50 rounded-xl text-green-400 font-bold text-xs sm:text-sm hover:bg-green-500/30 whitespace-nowrap"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Are you sure you want to cancel this order?')) {
+                                handleUpdateOrderStatus(order.id, 'cancelled');
+                              }
+                            }}
+                            className="cursor-pointer px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30 whitespace-nowrap"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Cancel button for other statuses */}
+                      {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'processing') && (
+                        <div className="flex gap-2">
+                          {order.status === 'pending' && (
+                            <motion.button
+                              whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateOrderStatus(order.id, 'confirmed');
+                              }}
+                              className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
+                            >
+                              <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                                animate={{ x: [-100, 100] }}
+                                transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                              />
+                              <span className="relative z-10 flex items-center gap-1">
+                                Accept
+                              </span>
+                            </motion.button>
+                          )}
+
+                          {order.status === 'confirmed' && (
+                            <motion.button
+                              whileHover={{ scale: 1.05, boxShadow: "0 0 25px rgba(249,115,22,0.8)" }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartPreparing(order.id);
+                              }}
+                              className="cursor-pointer gradient-orange text-slate-900 h-8 sm:h-9 px-3 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap relative overflow-hidden"
+                            >
+                              <motion.div
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-300/30 to-transparent"
+                                animate={{ x: [-100, 100] }}
+                                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                              />
+                              <span className="relative z-10 flex items-center gap-1">
+                                Start
+                              </span>
+                            </motion.button>
+                          )}
+
+                          {order.status === 'processing' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateOrderStatus(order.id, 'ready');
+                              }}
+                              className="cursor-pointer gradient-green bg-blue-500/20 text-blue-300 h-8 sm:h-9 px-3 sm:px-4 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.6)] font-semibold text-xs sm:text-sm whitespace-nowrap"
+                            >
+                              Ready
+                            </button>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Are you sure you want to cancel this order?')) {
+                                handleUpdateOrderStatus(order.id, 'cancelled');
+                              }
+                            }}
+                            className="cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold text-xs sm:text-sm hover:bg-red-500/30"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Real-time Countdown Timer for Preparing Orders */}
+                    {isOrderPreparing(order) && (
+                      <div className="mt-4 pt-4 border-t border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-16 h-16">
+                            <svg className="w-full h-full -rotate-90">
+                              <circle
+                                cx="32"
+                                cy="32"
+                                r="28"
+                                stroke="rgba(59, 130, 246, 0.2)"
+                                strokeWidth="4"
+                                fill="none"
+                              />
+                              <motion.circle
+                                cx="32"
+                                cy="32"
+                                r="28"
+                                stroke={orderTimers[order.id]?.isOvertime ? "#f97316" : "#3b82f6"}
+                                strokeWidth="4"
+                                fill="none"
+                                strokeLinecap="round"
+                                animate={{
+                                  pathLength: (orderTimers[order.id]?.progress || 0) / 100
+                                }}
+                                transition={{ duration: 0.5 }}
+                                style={{
+                                  strokeDasharray: "175.9",
+                                  strokeDashoffset: `${175.9 * (1 - (orderTimers[order.id]?.progress || 0) / 100)}`,
+                                }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Clock className={`w-6 h-6 ${orderTimers[order.id] ? getTimerColor(orderTimers[order.id]) : 'text-blue-400'}`} />
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            {orderTimers[order.id] ? (
+                              <>
+                                <p className={`text-xs ${orderTimers[order.id].isOvertime ? 'text-orange-400' : 'text-blue-400'}`}>
+                                  {orderTimers[order.id].isOvertime ? 'Overtime' : 'Time Remaining'}
+                                </p>
+                                <motion.p
+                                  className={`text-lg font-bold ${getTimerColor(orderTimers[order.id])}`}
+                                  animate={orderTimers[order.id].isOvertime ? {
+                                    scale: [1, 1.05, 1],
+                                  } : {}}
+                                  transition={{ duration: 1, repeat: orderTimers[order.id].isOvertime ? Infinity : 0 }}
+                                >
+                                  {orderTimers[order.id].isOvertime ? '+' : ''}{formatTime(orderTimers[order.id].remaining)}
+                                </motion.p>
+                                <p className="text-xs text-slate-500">
+                                  Expected: {order.preparationTime} min
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs text-slate-400">Preparation Time</p>
+                                <p className="text-white font-bold">{order.preparationTime} minutes</p>
+                                <p className="text-xs text-slate-500">
+                                  Started: {new Date(order.preparingAt).toLocaleTimeString('en-IN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Overtime Alert */}
+                        {orderTimers[order.id]?.isOvertime && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg"
+                          >
+                            <p className="text-xs text-orange-400 font-medium">
+                              Order is taking longer than expected
+                            </p>
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
         )}
 
         {/* Completed Orders Tab */}
@@ -1114,11 +1112,10 @@ export function ShopkeeperDashboard() {
                                 transition={{ delay: 0.05 * i }}
                               >
                                 <Star
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? 'fill-orange-500 text-orange-500'
-                                      : 'text-slate-600'
-                                  }`}
+                                  className={`w-4 h-4 ${i < review.rating
+                                    ? 'fill-orange-500 text-orange-500'
+                                    : 'text-slate-600'
+                                    }`}
                                 />
                               </motion.div>
                             ))}
@@ -1159,7 +1156,7 @@ export function ShopkeeperDashboard() {
             <p className="text-slate-400 text-sm mb-4">
               How long will it take to prepare this order?
             </p>
-            
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 Preparation Time (minutes)
@@ -1171,11 +1168,10 @@ export function ShopkeeperDashboard() {
                 value={preparationTime}
                 onChange={(e) => handlePreparationTimeChange(e.target.value)}
                 placeholder="e.g., 15"
-                className={`w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border transition-all outline-none ${
-                  preparationTimeError 
-                    ? 'border-red-500/50 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20' 
-                    : 'border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20'
-                }`}
+                className={`w-full glass rounded-xl px-4 py-3 text-white placeholder-slate-500 border transition-all outline-none ${preparationTimeError
+                  ? 'border-red-500/50 focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
+                  : 'border-slate-700/50 focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20'
+                  }`}
                 autoFocus
               />
               {preparationTimeError ? (

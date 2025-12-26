@@ -520,7 +520,7 @@ export function OrderTracking() {
                     transition={{ duration: 1.5, repeat: Infinity }}
                     className="text-2xl md:text-3xl font-bold text-orange-400 mb-3"
                   >
-                    🔥 Taking Longer Than Expected
+                    Taking Longer Than Expected
                   </motion.h2>
                   <p className="text-lg text-white mb-2">Overtime: +{formatTime(timeRemaining)}</p>
                   <p className="text-slate-400">Expected: {order.preparationTime} minutes</p>
@@ -532,7 +532,7 @@ export function OrderTracking() {
                     transition={{ duration: 2, repeat: Infinity }}
                     className="text-2xl md:text-3xl font-bold text-blue-400 mb-3"
                   >
-                    ⏱️ Your Order is Being Prepared
+                    Your Order is Being Prepared
                   </motion.h2>
                   <p className="text-lg text-white mb-2">Time Remaining</p>
                   <p className="text-slate-400">Almost ready for pickup!</p>
@@ -556,7 +556,7 @@ export function OrderTracking() {
               }`}
           >
             <div className="text-4xl mb-3">
-              {order.status === 'completed' || order.status === 'ready' ? '✅' :
+              {order.status === 'completed' || order.status === 'ready' ? '' :
                 order.preparationTime ? '⏱️' : '⏳'}
             </div>
 
@@ -646,7 +646,6 @@ export function OrderTracking() {
             animate={{ opacity: 1, y: 0 }}
             className="glass rounded-2xl p-6 text-center border-2 border-green-500/50 bg-green-500/10"
           >
-            <div className="text-4xl mb-3">📅</div>
             <h3 className="text-xl font-bold text-green-400 mb-2">Scheduled Order</h3>
             <p className="text-lg font-bold text-white mb-1">
               {new Date(order.scheduledTime).toLocaleDateString('en-IN', {
@@ -682,7 +681,6 @@ export function OrderTracking() {
               transition={{ duration: 2, repeat: Infinity }}
               className="text-6xl mb-4"
             >
-              🎉
             </motion.div>
             <h2 className="text-3xl font-bold text-green-400 mb-2">Order Ready!</h2>
             <p className="text-lg text-white mb-4">Your order is ready for pickup</p>
@@ -717,7 +715,6 @@ export function OrderTracking() {
               transition={{ duration: 2, repeat: Infinity }}
               className="text-6xl mb-4"
             >
-              ✅
             </motion.div>
             <h2 className="text-3xl font-bold text-green-400 mb-2">Order Completed!</h2>
             <p className="text-lg text-white mb-6">Thank you for choosing {order.shop.name}</p>
@@ -807,6 +804,10 @@ export function OrderTracking() {
                 const Icon = step.icon;
                 const isCompleted = index <= currentStatusIndex;
                 const isCurrent = index === currentStatusIndex;
+                if (step.label ==='Completed'){
+                  console.log('jvnjdfnkvjlsndndl')
+                  return
+                }
 
                 return (
                   <div key={step.key} className="flex items-center gap-4">

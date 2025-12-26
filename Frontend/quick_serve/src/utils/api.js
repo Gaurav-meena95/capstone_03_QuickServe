@@ -352,7 +352,7 @@ export const shopkeeperAPI = {
   },
 
   // Update order status
-  updateOrderStatus: async (orderId, status, preparationTime = null) => {
+   updateOrderStatus: async (orderId, status, preparationTime = null) => {
     const url = `${backend}/api/shops/orders/${orderId}/status`;
     const token = localStorage.getItem('accessToken');
     

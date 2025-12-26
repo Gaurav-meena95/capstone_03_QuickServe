@@ -133,7 +133,6 @@ export function ForgotPasswordPage() {
                     </>
                   ) : (
                     <>
-                      <span>📧</span>
                       <span>Send Reset Link</span>
                     </>
                   )}

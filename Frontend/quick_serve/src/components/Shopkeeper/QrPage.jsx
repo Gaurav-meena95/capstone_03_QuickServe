@@ -323,7 +323,7 @@ export function QRPage() {
               {/* Info */}
               <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl no-print">
                 <p className="text-sm text-orange-400">
-                  💡 Print this QR code and place it on tables or at the counter for easy customer access
+                  Print this QR code and place it on tables or at the counter for easy customer access
                 </p>
               </div>
               

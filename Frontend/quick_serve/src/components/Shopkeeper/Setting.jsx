@@ -539,7 +539,7 @@ export function SettingsPage() {
             </div>
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
               <p className="text-sm text-blue-300">
-                <span className="font-semibold">ℹ️ Auto Status:</span> Your shop status will automatically change to "Open" during these hours and "Closed" outside these hours.
+                <span className="font-semibold">Auto Status:</span> Your shop status will automatically change to "Open" during these hours and "Closed" outside these hours.
               </p>
             </div>
           </div>

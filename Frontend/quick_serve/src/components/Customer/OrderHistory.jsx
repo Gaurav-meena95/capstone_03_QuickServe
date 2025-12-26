@@ -164,7 +164,7 @@ export function OrderHistory() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('Order cancelled successfully! 🎉');
+        showSuccess('Order cancelled successfully! 🎊');
         fetchOrders(); // Refresh orders list
       } else {
         showError(data.message || 'Failed to cancel order');

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { ChevronLeft, CreditCard, Clock, Zap, Plus, Minus, Trash2 } from "lucide-react";
+import { ChevronLeft, CreditCard, Clock, Zap, Plus, Minus, Trash2, PhoneIcon, IndianRupeeIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../hooks/useToast";
 import { ToastContainer } from "../Toast";
@@ -24,8 +24,8 @@ export function Checkout() {
   // Available payment methods
   const paymentMethods = [
     { value: 'CARD', icon: CreditCard, label: 'Credit/Debit Card', desc: 'Visa, Mastercard, Amex' },
-    { value: 'UPI', icon: '📱', label: 'Digital Wallets', desc: 'UPI, PhonePe, GPay' },
-    { value: 'CASH', icon: '💵', label: 'Cash on Pickup', desc: 'Pay when you collect' },
+    { value: 'UPI', icon: PhoneIcon, label: 'Digital Wallets', desc: 'UPI, PhonePe, GPay' },
+    { value: 'CASH', icon: IndianRupeeIcon, label: 'Cash on Pickup', desc: 'Pay when you collect' },
   ];
 
   useEffect(() => {
@@ -351,8 +351,8 @@ export function Checkout() {
                 type="datetime-local"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
-                min={new Date(Date.now() + 30 * 60000).toISOString().slice(0, 16)} // 30 minutes from now
-                className="w-full glass rounded-xl px-4 py-3 text-white bg-transparent border border-green-500/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all outline-none"
+                min={new Date(Date.now() + 30 * 60000).toISOString().slice(0, 16)} 
+                className="w-full  rounded-xl px-4 py-3 text-white border border-green-500/50 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all outline-none"
               />
               <p className="text-xs text-green-400/70 mt-2">
                 Minimum 30 minutes from now

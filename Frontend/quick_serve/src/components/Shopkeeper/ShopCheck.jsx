@@ -27,20 +27,20 @@ export function ShopCheck({ children, onShopData }) {
       const result = await shopkeeperAPI.getShop()
       
       if (result.success) {
-        console.log('✅ Shop data received from backend:', result.data)
+        console.log('Shop data received from backend:', result.data)
         const shop = result.data.shop || result.data
         const normalizedShop = {
           ...shop,
           cuisineType: shop.cuisineType || shop.category || 'Category',
           isOpen: shop.isOpen !== undefined ? shop.isOpen : (shop.status === 'open'),
         }
-        console.log('✅ Normalized shop:', normalizedShop)
+        console.log('Normalized shop:', normalizedShop)
         
         // Update context
         setShopData(normalizedShop)
         if (onShopData) onShopData(normalizedShop)
       } else {
-        console.error('❌ Shop API failed:', result.error)
+        console.error('Shop API failed:', result.error)
         if (result.errorType === 'notfound') {
           navigate('/shopkeeper/shop/create')
         } else if (result.errorType === 'auth') {
