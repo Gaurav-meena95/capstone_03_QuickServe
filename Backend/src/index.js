@@ -15,6 +15,7 @@ const { startCleanupScheduler } = require('./utils/cleanupOrders')
 const app = express();
 // Increase payload size limit for image uploads (base64 images can be large)
 app.use(express.json({ limit: '50mb' }))
+
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // Configure CORS for production
@@ -31,8 +32,8 @@ const corsOptions = {
     exposedHeaders: ['x-access-token', 'x-refresh-token']
 }
 
-app.use(cors(corsOptions))
-app.get('/', (req, res) => res.send("QuickServe API is running ✅"))
+app.use(cors())
+app.get('/', (req, res) => res.send("QuickServe API is running "))
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 

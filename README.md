@@ -720,3 +720,5 @@ Student ID: 2401010169
 ---
 
 **QuickServe v1.0.0** - Order Food, Skip the Wait! 🍔🚀
+
+https://capstone-03-quick-serve-n6iy.vercel.app

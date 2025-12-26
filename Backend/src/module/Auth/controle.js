@@ -7,7 +7,6 @@ const sec_key = process.env.sec_key
 async function signup(req, res) {
     try {
         const { name, email, phone, password, role } = req.body
-        console.log(req.body)
         if (!name || !email || !password || !role || !phone) {
             return res.status(401).json({ 'Error': 'All filed Required' })
         }
@@ -80,7 +79,7 @@ async function signup(req, res) {
 async function login(req, res) {
     try {
         const { email, password, role, phone } = req.body
-        console.log('🔍 Login attempt:', { email, role });
+        console.log('Login attempt:', { email, role });
         
         const existing = await prisma.user.findFirst({ 
             where: { 
