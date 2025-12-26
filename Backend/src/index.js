@@ -32,7 +32,9 @@ const corsOptions = {
     exposedHeaders: ['x-access-token', 'x-refresh-token']
 }
 
-app.use(cors())
+app.use(cors({
+    origin: "*"
+}))
 app.get('/', (req, res) => res.send("QuickServe API is running "))
 app.get('/api/health', (req, res) => {
     res.json({ 
