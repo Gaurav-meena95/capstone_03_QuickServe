@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, createContext, useContext, useEffect } from 'react'
 import { SignupPage } from './components/auth/SignupPage'
 import { LoginPage } from './components/auth/LoginPage'
+import { LandingPage } from './components/LandingPage'
 import { SplashScreen } from './components/SplashScreen'
 import { CustomerHome } from './components/Customer/CustomerHome'
 import { ProfilePage } from './components/Customer/ProfilePage'
@@ -33,29 +34,37 @@ export function useShopData() {
   return useContext(ShopDataContext)
 }
 
+// Auth Redirect Component - handles initial routing based on stored auth
+function AuthRedirect() {
+  const token = localStorage.getItem('accessToken')
+  const role = localStorage.getItem('userRole')
+  
+  if (!token || !role) {
+    return <Navigate to="/landing" replace />
+  }
+  
+  if (role === 'CUSTOMER') {
+    return <Navigate to="/customer/home" replace />
+  } else if (role === 'SHOPKEEPER') {
+    return <Navigate to="/shopkeeper/dashboard" replace />
+  }
+  
+  return <Navigate to="/landing" replace />
+}
+
 function App() {
   const [showSplash, setShowsplash] = useState(true)
   const [shopData, setShopData] = useState(null)
+  const [isAuthChecked, setIsAuthChecked] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken')
-    const role = localStorage.getItem('userRole')
-    
-    if (token && role === 'SHOPKEEPER') {
-      const backend = import.meta.env.VITE_PUBLIC_BACKEND_URL
-      const refreshToken = localStorage.getItem('refreshToken')
+    const checkAuthAndInitialize = async () => {
+      const token = localStorage.getItem('accessToken')
+      const role = localStorage.getItem('userRole')
       
-      const headers = {
-        'Authorization': `JWT ${token}`,
-        'Content-Type': 'application/json'
-      }
-      
-      if (refreshToken) {
-        headers['x-refresh-token'] = refreshToken
-      }
-      
-      shopkeeperAPI.getShop()
-        .then(result => {
+      if (token && role === 'SHOPKEEPER') {
+        try {
+          const result = await shopkeeperAPI.getShop()
           if (result.success && result.data.shop) {
             const shop = result.data.shop
             const normalizedShop = {
@@ -65,13 +74,31 @@ function App() {
             }
             setShopData(normalizedShop)
           }
-        })
-        .catch(err => console.error('Error loading shop:', err))
+        } catch (err) {
+          console.error('Error loading shop:', err)
+          // If token is invalid, clear it
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          localStorage.removeItem('userRole')
+        }
+      }
+      
+      setIsAuthChecked(true)
     }
+
+    checkAuthAndInitialize()
   }, [])
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowsplash(false)} />
+  }
+
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -79,6 +106,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
+          <Route path="/landing" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -107,8 +135,8 @@ function App() {
             }
           />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Default redirect - check auth status */}
+          <Route path="/" element={<AuthRedirect />} />
         </Routes>
       </BrowserRouter>
     </ShopDataContext.Provider>

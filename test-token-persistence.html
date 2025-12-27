@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>QuickServe Token Persistence Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Store Test Token</h3>
+        <button onclick="storeToken()">Store Token</button>
+        <div id="store-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Check Token Persistence</h3>
+        <button onclick="checkToken()">Check Token</button>
+        <div id="check-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Clear Token</h3>
+        <button onclick="clearToken()">Clear Token</button>
+        <div id="clear-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test App Redirect Logic</h3>
+        <button onclick="testRedirect()">Test Redirect</button>
+        <div id="redirect-result"></div>
+    </div>
+
+    <script>
+        function storeToken() {
+            localStorage.setItem('accessToken', 'test-token-123');
+            localStorage.setItem('userRole', 'CUSTOMER');
+            document.getElementById('store-result').innerHTML = '<span class="success">✅ Token stored successfully</span>';
+        }
+        
+        function checkToken() {
+            const token = localStorage.getItem('accessToken');
+            const role = localStorage.getItem('userRole');
+            
+            if (token && role) {
+                document.getElementById('check-result').innerHTML = 
+                    `<span class="success">✅ Token found: ${token}</span><br>
+                     <span class="success">✅ Role found: ${role}</span>`;
+            } else {
+                document.getElementById('check-result').innerHTML = 
+                    '<span class="error">❌ No token or role found</span>';
+            }
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('refreshToken');
+            document.getElementById('clear-result').innerHTML = '<span class="success">✅ Tokens cleared</span>';
+        }
+        
+        function testRedirect() {
+            const token = localStorage.getItem('accessToken');
+            const role = localStorage.getItem('userRole');
+            
+            let redirectUrl = '/landing';
+            
+            if (token && role) {
+                if (role === 'CUSTOMER') {
+                    redirectUrl = '/customer/home';
+                } else if (role === 'SHOPKEEPER') {
+                    redirectUrl = '/shopkeeper/dashboard';
+                }
+            }
+            
+            document.getElementById('redirect-result').innerHTML = 
+                `<span class="success">✅ Would redirect to: ${redirectUrl}</span>`;
+        }
+    </script>
+</body>
+</html>

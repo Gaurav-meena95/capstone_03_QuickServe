@@ -2,7 +2,11 @@ const prisma = require('../../config/prismaClient')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const { CLIENT_RENEG_LIMIT } = require('tls')
+const { OAuth2Client } = require('google-auth-library')
 const sec_key = process.env.sec_key
+
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 async function signup(req, res) {
     try {
@@ -223,4 +227,94 @@ async function resetPassword(req, res) {
     }
 }
 
-module.exports = { signup, login, forgotPassword, resetPassword }
+async function googleAuth(req, res) {
+    try {
+        const { credential, role } = req.body;
+        
+        if (!credential || !role) {
+            return res.status(400).json({ message: 'Google credential and role are required' });
+        }
+
+        // Verify the Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        if (!email || !name) {
+            return res.status(400).json({ message: 'Invalid Google token' });
+        }
+
+        // Check if user already exists
+        let user = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { googleId: googleId }
+                ]
+            }
+        });
+
+        if (user) {
+            // User exists, check if role matches
+            if (user.role !== role) {
+                return res.status(400).json({ 
+                    message: `Account exists with different role. Please login as ${user.role.toLowerCase()}` 
+                });
+            }
+
+            // Update Google ID if not set
+            if (!user.googleId) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: { googleId: googleId }
+                });
+            }
+        } else {
+            // Create new user
+            user = await prisma.user.create({
+                data: {
+                    name: name,
+                    email: email,
+                    phone: '0000000000', // Default phone for Google OAuth users
+                    password: await bcrypt.hash(googleId, 10), // Use Google ID as password hash
+                    role: role,
+                    googleId: googleId,
+                    profileImage: picture
+                }
+            });
+        }
+
+        // Generate JWT tokens
+        const jwtToken = await jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            sec_key,
+            { expiresIn: '1h' }
+        );
+
+        const refreshToken = await jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            sec_key,
+            { expiresIn: '7d' }
+        );
+
+        return res.status(200).json({
+            message: 'Google authentication successful',
+            user: user,
+            token: jwtToken,
+            refreshToken
+        });
+
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ 
+            message: 'Google authentication failed', 
+            error: error.message 
+        });
+    }
+}
+
+module.exports = { signup, login, forgotPassword, resetPassword, googleAuth }

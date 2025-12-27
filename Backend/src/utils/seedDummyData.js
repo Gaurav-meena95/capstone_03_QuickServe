@@ -484,7 +484,7 @@ async function seedDummyData() {
     const demoOrders = [
       // Active processing order (for demo customer)
       {
-        token: 'TKN1234567890ABC',
+        token: '202512271001',
         orderNumber: 'ORD-001',
         customerId: customers[0].id, // Demo customer
         shopId: createdShops[0].id, // Burger Palace
@@ -503,7 +503,7 @@ async function seedDummyData() {
       },
       // Ready order
       {
-        token: 'TKN2345678901BCD',
+        token: '202512271002',
         orderNumber: 'ORD-002',
         customerId: customers[0].id,
         shopId: createdShops[1].id, // Pizza Corner
@@ -522,7 +522,7 @@ async function seedDummyData() {
       },
       // Completed order (can be reviewed)
       {
-        token: 'TKN3456789012CDE',
+        token: '202512271003',
         orderNumber: 'ORD-003',
         customerId: customers[0].id,
         shopId: createdShops[2].id, // Spice Garden
@@ -543,7 +543,7 @@ async function seedDummyData() {
       },
       // Pending order
       {
-        token: 'TKN4567890123DEF',
+        token: '202512271004',
         orderNumber: 'ORD-004',
         customerId: customers[1].id,
         shopId: createdShops[0].id,
@@ -558,7 +558,7 @@ async function seedDummyData() {
       },
       // Cancelled order
       {
-        token: 'TKN5678901234EFG',
+        token: '202512271005',
         orderNumber: 'ORD-005',
         customerId: customers[0].id,
         shopId: createdShops[3].id, // Taco Fiesta
@@ -574,7 +574,7 @@ async function seedDummyData() {
       },
       // Scheduled order for demo shopkeeper
       {
-        token: 'TKN6789012345FGH',
+        token: '202512271006',
         orderNumber: 'ORD-006',
         customerId: customers[2].id,
         shopId: createdShops[0].id, // Demo shopkeeper's shop

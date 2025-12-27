@@ -139,22 +139,42 @@ exports.createOrder = async (userId, orderData) => {
           }
         });
         
-        // Calculate next token number
+        // Calculate next token number (purely numerical)
         let tokenNumber = 1;
         if (lastOrder && lastOrder.token) {
-          // Extract number from token (format: "YYYYMMDD-N")
-          const parts = lastOrder.token.split('-');
-          if (parts.length === 2) {
-            const lastTokenNum = parseInt(parts[1]);
+          const tokenStr = lastOrder.token.toString();
+          
+          // Handle new format (e.g., "202512271001")
+          if (tokenStr.length >= 11 && !tokenStr.includes('-')) {
+            // Extract the last 3 digits as sequence number
+            const sequenceStr = tokenStr.slice(-3);
+            const sequenceNum = parseInt(sequenceStr);
+            if (!isNaN(sequenceNum)) {
+              tokenNumber = sequenceNum + 1;
+            }
+          }
+          // Handle old format (e.g., "20251227-1") - for backward compatibility
+          else if (tokenStr.includes('-')) {
+            const parts = tokenStr.split('-');
+            if (parts.length === 2) {
+              const lastTokenNum = parseInt(parts[1]);
+              if (!isNaN(lastTokenNum)) {
+                tokenNumber = lastTokenNum + 1;
+              }
+            }
+          }
+          // Handle simple numerical tokens
+          else {
+            const lastTokenNum = parseInt(tokenStr);
             if (!isNaN(lastTokenNum)) {
               tokenNumber = lastTokenNum + 1;
             }
           }
         }
         
-        // Format: YYYYMMDD-N (e.g., "20251206-1")
-        const datePrefix = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
-        const token = `${datePrefix}-${tokenNumber}`;
+        // Generate a purely numerical token (e.g., "202512271007")
+        const dateNum = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+        const token = `${dateNum}${String(tokenNumber).padStart(3, '0')}`; // e.g., "202512271007"
         const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substring(2, 7)}`;
 
         // Create the order within the transaction
